@@ -2,7 +2,6 @@
 
 - Overleaf document: https://www.overleaf.com/4578711964kfrnpsghcgsg
 
-
 ## Floating Point Arithmetic
 
 - A tradeoff between accuracy and performance must be made.
@@ -27,7 +26,7 @@
     - **double double**: Not available on Aimos.
 
     - **__float128 (quad precision floating point)**: Not available on Aimos.
-        - Woudl eb impelemented the same as long double with 16 bytes.
+        - Woudl be impelemented the same as long double with 16 bytes.
     
     - External libraries that are probably not worth the hassle:
         - **GMP**
@@ -80,6 +79,14 @@
     - `--iterations, -i`: The number of iterations to perform before determining whether a number belongs in the set or not.
         - default: 20
 
+    - `--outputfile, -o`: The name of the file to output the image to.
+
+    - `--blocksize, -b`: The number of threads per block to use in the computation.
+
+        - default: TBD
+
+        - The number of blocks to use will be computed from the total number of points to calculate and this value.
+
 ## Math
 
 - The x axis is the real axis, the y axis is the imaginary axis.
@@ -112,3 +119,25 @@
 - [A quick overview with a formula](https://linas.org/art-gallery/escape/smooth.html)
 
 - [A more in depth article](http://www.iquilezles.org/www/articles/mset_smooth/mset_smooth.htm)
+
+## Division of Labor
+
+- argument parsing
+- bitmap/image generation
+- actual math
+- thread/block divisions
+
+- Adam: arg parsing
+- Ethan: math
+- John: bitmap/image generation + coloring algorithm
+- Shashank: thread/block divisions
+
+## Coding Conventions
+
+- Doxygen blocks for public functions
+
+- Python style naming conventions.
+    - snake_case for variables and functions.
+    - PascalCase for types.
+    - alllowercase for file names/headers.
+    - _leading_underscore for private functions.

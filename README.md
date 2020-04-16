@@ -18,7 +18,7 @@
     
     - **long double**: 16 Bytes.
         - 128 bit quad precision float.
-        - lower boud: ±3.36 x 10^-4932
+        - lower bound: ±3.36 x 10^-4932
         - upper bound: ±1.18 x 10^4932
         - significant digits: 33-36
 

@@ -1,6 +1,7 @@
 // Writes passed 1D C array to .bmp file
 
 #include <stdio.h>
+#include "bitmap.h"
 
 // Constants
 const int bytes_per_pixel = 3; // for 3 pixel colors: red, green. blue
@@ -10,36 +11,6 @@ const int info_header_size = 40; // format-required
 const char *image_file_name = "output.bmp";
 
 // Methods
-/**
- * @brief Takes as input a 1D integer array (and image details) and writes to output.bmp
- * 
- * @param height The final image height
- * 
- * @param width The final image width
- * 
- */
-void write_array_to_bitmap(unsigned char *data, int height, int width) {
-
-    // 
-    unsigned char padding[3] = {0, 0, 0};
-    int padding_size = (4 - (width * bytes_per_pixel) % 4) % 4;
-
-    unsigned char* fileHeader = _create_bmp_file_header(height, width, padding_size);
-    unsigned char* infoHeader = _create_bmp_info_header(height, width);
-
-    FILE* f = fopen(image_file_name, "wb");
-
-    fwrite(fileHeader, 1, file_header_size, f);
-    fwrite(infoHeader, 1, info_header_size, f);
-
-    for (int i = 0; i < height; i++) {
-        fwrite(data + (i * width * bytes_per_pixel), bytes_per_pixel, width, f);
-        fwrite(padding, 1, padding_size, f);
-    }
-
-    fclose(f);
-}
-
 /**
  * @brief Creates array containing .bmp format-required file header based in image specifications
  * 
@@ -110,4 +81,38 @@ unsigned char *_create_bmp_info_header(int height, int width) {
     info_header[14] = (unsigned char)(bytes_per_pixel * 8);
 
     return info_header;
+}
+
+/**
+ * @brief Takes as input a 1D integer array (and image details) and writes to output.bmp
+ * 
+ * @param height The final image pixel height
+ * 
+ * @param width The final image pixel width
+ * 
+ */
+void write_array_to_bitmap(unsigned char *data, int height, int width) {
+
+    // .bmp format padding array
+    unsigned char padding[3] = {0, 0, 0};
+
+    // compute padding size (math magic)
+    int padding_size = (4 - (width * bytes_per_pixel) % 4) % 4;
+
+    // create .bmp file headers
+    unsigned char* fileHeader = _create_bmp_file_header(height, width, padding_size);
+    unsigned char* infoHeader = _create_bmp_info_header(height, width);
+
+    FILE* f = fopen(image_file_name, "wb");
+
+    fwrite(fileHeader, 1, file_header_size, f);
+    fwrite(infoHeader, 1, info_header_size, f);
+
+    // write image data to file
+    for (int i = 0; i < height; i++) {
+        fwrite(data + (i * width * bytes_per_pixel), bytes_per_pixel, width, f);
+        fwrite(padding, 1, padding_size, f);
+    }
+
+    fclose(f);
 }

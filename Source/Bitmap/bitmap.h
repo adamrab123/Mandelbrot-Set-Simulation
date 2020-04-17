@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 /**
- * @brief Takes as input a 1D integer array (and image details) and writes to output.bmp
+ * @brief Takes as input a 1D integer array (and image details) and writes to "output.bmp"
  * 
  * @param height The final image pixel height
  * 

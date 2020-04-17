@@ -72,12 +72,12 @@ extern "C" void init( int dim_width, int dim_height, int step )
  * 
  * @param grid the grid
  */
-extern "C" __global__ void mandlebrot_kernel(const unsigned char* grid){
-
+extern "C" __global__ void mandlebrot_kernel(unsigned char** grid, int num_iterations){
+    // Put some math code in here
 }
 
 /**
- * @brief starts the mandlebrot kernel with @p blocksize threads with each point undergoing @p iterations
+ * @brief starts the mandlebrot kernel with @p blocksize threads with each point undergoing @p num_iterations
  * 
  * @param num_iterations number of iterations per point
  * @param block_size number of threads per block
@@ -88,7 +88,7 @@ extern "C" bool launch_mandlebrot_kernel(int num_iterations, ushort block_size){
 
     // QUESTION: do we iterate here or in kernel?
 
-    // Launch kernel each iteration
+    // Launch kernel
     mandlebrot_kernel<<<numBlocks, block_size>>>(grid, num_iterations);
     // Synchronize threads
     cudaDeviceSynchronize();
@@ -99,5 +99,10 @@ extern "C" bool launch_mandlebrot_kernel(int num_iterations, ushort block_size){
  * @brief Frees the memory previously allocated using cudaMallocManaged
  */
 extern "C" void freeCuda(){
+    // free individual columns
+    for (int i = 0; i < grid_width; i++){
+        cudaFree(grid[i]);
+    }
+    // finally free the overall grid
 	cudaFree(grid);
 }

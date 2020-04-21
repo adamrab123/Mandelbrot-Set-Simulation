@@ -210,5 +210,16 @@ double _MB_normalized_iterations(const MB_Point *point) {
     // Smooth is on (0, max_iter).
     int smooth = point->iters_performed + 1 - logl(logl(cabsl(point->z_final))) / logl(2);
     // Normalize smooth to be on (0, 1).
-    return smooth / point->max_iters;
+    return (double)smooth / point->max_iters;
+}
+
+/**
+ * @brief Determines whether @p point diverged after its maximum number of iterations of the Mandlebrot set calculation.
+ *
+ * @param point The point to determine divergence for.
+ *
+ * @return @c true if @p point diverged, @c false otherwise.
+ */
+bool MB_diverged(const MB_Point *point) {
+    return point->iters_performed >= point->max_iters;
 }

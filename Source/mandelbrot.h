@@ -45,4 +45,6 @@ MB_Point MB_iterate_mandelbrot(long double c_real, long double c_img, int iterat
 
 MB_Rgb MB_color_of(const MB_Point *point, MB_ColorMap conversion);
 
+bool MB_diverged(const MB_Point *point);
+
 #endif // MANDELBROT_H

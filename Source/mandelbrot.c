@@ -221,5 +221,5 @@ double _MB_normalized_iterations(const MB_Point *point) {
  * @return @c true if @p point diverged, @c false otherwise.
  */
 bool MB_diverged(const MB_Point *point) {
-    return point->iters_performed >= point->max_iters;
+    return point->iters_performed < point->max_iters;
 }

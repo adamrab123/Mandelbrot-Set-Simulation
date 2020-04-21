@@ -141,3 +141,28 @@
     - PascalCase for types.
     - alllowercase for file names/headers.
     - _leading_underscore for private functions.
+
+## File sizes
+
+- Compression results depend on the file contents.
+
+- The tests below were performed on a 24,884,010 byte bmp file.
+
+    - Convert bmp to png: 3,346,416 bytes.
+
+    - bmp to zip archive: 4,220,059 bytes
+
+- To approximate compressed file size given one dimension pixel count of a square image:
+
+    - d = number of pixels along one dimension of the image.
+
+    - fc = compression factor. Factor by which the compression algorithm will reduce image size.
+
+    - compressed size in bytes = (d^2 * 3) / cf
+
+    - Assuming fc = 4 (conservative estimate based on the test file which had cf ~= 7):
+
+        - d = 10,000: 75,000,000 bytes (75 Mb)
+        - d = 100,000: 7,500,000,000 bytes (7.5 Gb)
+        - d = 1,000,000: 750,000,000,000 bytes (750 Gb)
+

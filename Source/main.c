@@ -5,27 +5,28 @@
 
 #include "mandelbrot.h"
 
-const int iters = 100;
-
-void assert_diverged(long double real, long double img) {
-    MB_Point p1 = MB_iterate_mandelbrot(real, img, iters);
-    assert(MB_diverged(&p1));
-
-    printf("%Lf + %Lf i diverged after %d iterations\n", creall(p1.c), cimagl(p1.c), p1.iters_performed);
-}
-
-void assert_converged(long double real, long double img) {
-    MB_Point p1 = MB_iterate_mandelbrot(real, img, iters);
-    assert( ! MB_diverged(&p1));
-
-    printf("%Lf + %Lf i converged. %d iterations were performed\n", creall(p1.c), cimagl(p1.c), p1.iters_performed);
-}
-
 int main() {
-    // All point (-2, 0) to (1/4, 0) are on the set.
-    assert_converged(-1, 0);
-    assert_converged(0.2222332, 0);
-    assert_diverged(5, 3);
+    int x_min = -2;
+    int x_max = 2;
+    int y_min = -2;
+    int y_max = 2;
+
+    int iters = 100;
+
+    long double step = 0.05;
+
+    for (long double y = y_max; y > y_min; y -= step) {
+        for (long double x = x_min; x < x_max; x += step) {
+            MB_Point p1 = MB_iterate_mandelbrot(x, y, iters);
+            if (MB_diverged(&p1)) {
+                printf("   ");
+            }
+            else {
+                printf(" * ");
+            }
+        }
+        printf("\n");
+    }
 
     return EXIT_SUCCESS;
 }

@@ -16,10 +16,10 @@ unsigned char ** grid = NULL;
 /**
  * @brief Allocates the grid using cudaMallocManaged
  */
-extern "C" void allocate_grid(){
+extern "C" void allocate_grid(){      
     // Get data sizes using axis_size * step_size
-    grid_width = x_axis * step_size;
-    grid_height = y_axis * step_size;
+    grid_width = int(x_axis * 1.0/step_size);
+    grid_height = int(y_axis * 1.0/step_size);
     // allocate rows
     int error = cudaMallocManaged( & grid, grid_width * sizeof(unsigned char *));
     // check if the allocation yielded an error

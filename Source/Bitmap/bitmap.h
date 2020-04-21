@@ -4,13 +4,27 @@
 #include <stdio.h>
 
 /**
- * @brief Takes as input a 1D integer array (and image details) and writes to "output.bmp"
+ * @brief Initialize the .bmp output file with a given height and width
  * 
- * @param height The final image pixel height
+ * @param height The image height in pixels
  * 
- * @param width The final image pixel width
+ * @param width The image width in pixels
  * 
  */
-void write_array_to_bitmap(unsigned char *data, int height, int width);
+void init_output_file(int height, int width);
+
+/**
+ * @brief Writes passed pixel to the output file using sequential C methods
+ * 
+ * @param pixel Array of size 3 containing values for each color
+ */
+void write_pixel_to_file_sequential(unsigned char *pixel);
+
+/**
+ * @brief Writes passed pixel to the output file using parallel MPI methods
+ * 
+ * @param pixel Array of size 3 containing values for each color
+ */
+void write_pixel_to_file_parallel(unsigned char *pixel);
 
 #endif

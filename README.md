@@ -51,6 +51,8 @@
     - Maybe slightly more difficult to write than ppm, but probably more compact before compression.
 
     - Wikipedia says zip can provide effective lossless compression for moving the data off Aimos.
+    
+    - [Bitmap File Format Specifications](https://web.archive.org/web/20080912171714/http://www.fortunecity.com/skyscraper/windows/364/bmpffrmt.html)
 
 ## Command Line Arguments
 

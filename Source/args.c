@@ -1,6 +1,3 @@
-// Program to illustrate the getopt() 
-// function in C 
-  
 #include <stdio.h>  
 #include <unistd.h>  
 #include <stdlib.h>
@@ -8,9 +5,21 @@
 
 #include "args.h"
 
-
-  
+/**
+ * @brief Parses the given argc,argv and modifies program parameters 
+ * 
+ * Uses the getopt function to parse the argv sequence provided from the 
+ *      main program call to alter our simulation parameters. Paramters
+ *      are set to their defaults before parsing user input.
+ *
+ * @param argc This is the argc passed in from the original main function
+ * @param argv This is the argv passed in from the original main function
+ *
+ * @return An @c Arguments instance with user provided parameter inputts
+ */  
 Arguments getArgs(int argc, char *argv[]) { 
+
+    // setting all parameters to their default values
     int x_min = -2;
     int x_max = 2;
     int y_min = -2;
@@ -22,7 +31,11 @@ Arguments getArgs(int argc, char *argv[]) {
       
 
     int opt;
-    while((opt = getopt(argc, argv, ":x:X:y:Y:s:i:i:b:o:lx")) != -1) {  
+    // defining what parameters getopt needs to look for
+    while((opt = getopt(argc, argv, ":x:X:y:Y:s:i:i:b:o:lx")) != -1) { 
+        // iterating through possible matches
+        // for int options, convert to int. 
+        // for float convert to float, etc 
         switch(opt) {  
             case 'x':
             	printf("x_min set to: %s\n", optarg);
@@ -42,6 +55,8 @@ Arguments getArgs(int argc, char *argv[]) {
                 break;
             case 's':
                 printf("steps set to: %s\n", optarg);
+                // the steps conversion requirs adding a null byte 
+                //      to the end of the array before converting
                 int length = sizeof(optarg) / sizeof(optarg[0]);
                 char* word = calloc(length+1, sizeof(char));
                 strcpy(word,optarg);

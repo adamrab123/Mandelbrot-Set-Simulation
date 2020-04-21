@@ -1,11 +1,16 @@
-// Program to illustrate the getopt() 
-// function in C 
+#ifndef ARGS_H
+#define ARGS_H
   
 #include <stdio.h>  
 #include <unistd.h>  
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * @brief Contains information about the optional command 
+ *      line parameters passed into our simulation
+ * 
+ */
 typedef struct {
     int x_min;
     int x_max;
@@ -19,4 +24,5 @@ typedef struct {
 
   
 Arguments getArgs(int argc, char *argv[]);
-    
+
+#endif // ARGS_H

@@ -103,7 +103,7 @@ void write_array_to_bitmap(unsigned char *data, int height, int width) {
     unsigned char* fileHeader = _create_bmp_file_header(height, width, padding_size);
     unsigned char* infoHeader = _create_bmp_info_header(height, width);
 
-    FILE* f = fopen(image_file_name, "wb");
+    FILE *f = fopen(image_file_name, "wb");
 
     fwrite(fileHeader, 1, file_header_size, f);
     fwrite(infoHeader, 1, info_header_size, f);

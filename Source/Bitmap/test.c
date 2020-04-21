@@ -13,9 +13,9 @@ int main() {
         for(int j = 0; j < width; j++) {
 
             // create pixel primary color gradient
-            image[i][j][2] = (unsigned char)((double) i / height * 255); ///red
-            image[i][j][1] = (unsigned char)((double) j / width * 255); ///green
-            image[i][j][0] = (unsigned char)(((double) i + j) / (height + width) * 255); ///blue
+            image[i][j][2] = (unsigned char)((double) i / height * 255);                 // red
+            image[i][j][1] = (unsigned char)((double) j / width * 255);                  // green
+            image[i][j][0] = (unsigned char)(((double) i + j) / (height + width) * 255); // blue
         }
     }
 

@@ -24,9 +24,6 @@ int main() {
             write_pixel_to_file_sequential(pixel, i, j);
         }
     }
-
-    // unsigned char pixel[3] = {255, 0, 0};
-    // write_pixel_to_file_sequential(pixel, 1, 1);
     
     printf("Image generated!\n");
 

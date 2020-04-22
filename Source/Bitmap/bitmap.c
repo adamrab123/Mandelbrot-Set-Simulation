@@ -19,7 +19,9 @@ int _padding_size;
 
 // Methods
 /**
- * @brief Calculate the offset for a given pixel based on its coords
+ * @brief Calculate the offset for a given pixel based on its coords.
+ *        The formula takes into account both header sizes, the bytes per pixel value
+ *        for each pixel and the amount of padding present in each row.
  * 
  * @param y The distance on the y-axis that the input pixel sits on the image
  * 

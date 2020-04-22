@@ -7,51 +7,52 @@
 #include<cuda_runtime.h>
 
 // Useful variables
-int x_axis = 0, y_axis = 0;
-int grid_width = 0, grid_height = 0;
-int step_size = 0
-int total_grid_size = 0;
-unsigned char ** grid = NULL;
+int x_axis, y_axis;
+int grid_width, grid_height;
+int step_size;
+int my_rank, num_ranks;
+int start_x, end_x; //points that each rank is responsible for
 
 /**
- * @brief Allocates the grid using cudaMallocManaged
- */
-extern "C" void allocate_grid(){      
-    // Get data sizes using axis_size * step_size
-    grid_width = int(x_axis * 1.0/step_size);
-    grid_height = int(y_axis * 1.0/step_size);
-    // allocate rows
-    int error = cudaMallocManaged( & grid, grid_width * sizeof(unsigned char *));
-    // check if the allocation yielded an error
-    if(error != cudaSuccess){
-        printf("Error received with error %d!\n", error);
-        exit(EXIT_FAILURE);
-    }   
-
-    // allocate columns
-    for (int i = 0; i < grid_width; i++){
-        error = cudaMallocManaged( & grid[i], grid_height * sizeof(unsigned char));
-        if(error != cudaSuccess){
-            printf("Error received with error %d!\n", error);
-            exit(EXIT_FAILURE);
-        }
-        // Initialize grid to 0
-        cudaMemset(grid[i], 0, grid_height);
-    }
-}
-
-/**
- * @brief Initializes the grid of size @p x_axis * @p y_axis with @p step
+ * @brief Initialize variables and assign portion of grid to the current rank
  * 
  * @param dim_width the size of the x-axis of the grid
  * @param dim_height the size of the y-axis of the grid
  * @param step the step size increments of the grid
+ * @param myrank the current rank
+ * @param numranks the total number of ranks
  */
-extern "C" void init( int dim_width, int dim_height, int step )
+extern "C" void init( int dim_width, int dim_height, int step, int myrank, int numranks )
 {
     x_axis = dim_width;
     y_axis = dim_height;
     step_size = step;
+    grid_width = int(x_axis * 1.0/step_size);
+    grid_height = int(y_axis * 1.0/step_size);
+    my_rank = myrank;
+    num_ranks = numranks;
+    
+    // Divide up responsibility of grid as best as possible
+    // Case 1: Equal responsibility
+    if (grid_width % num_ranks == 0){
+        start_x = my_rank * (grid_width/num_ranks);
+        end_x = start_x + (grid_width/num_ranks);
+    }
+    // Case 2: Unequal, but maximize fairness as best as possible
+    else {
+        int cutoff = num_ranks - (grid_width % num_ranks);
+        start_x = my_rank * (grid_width/num_ranks);
+        if (my_rank >= cutoff){
+            if (my_rank > cutoff){
+                start_x++;
+            } 
+            end_x = start_x + (grid_width/num_ranks) + 1;
+        }
+        else{
+            end_x = start_x + (grid_width/num_ranks);
+        }
+    }
+
 	int cudaDeviceCount;
 	cudaError_t cE;
 	if( (cE = cudaGetDeviceCount( &cudaDeviceCount)) != cudaSuccess )
@@ -64,7 +65,6 @@ extern "C" void init( int dim_width, int dim_height, int step )
         printf(" Unable to have rank %d set to cuda device %d, error is %d \n", myrank, (myrank % cudaDeviceCount), cE);
         exit(-1);
     }
-    allocate_grid();
 }
 
 /**
@@ -72,8 +72,10 @@ extern "C" void init( int dim_width, int dim_height, int step )
  * 
  * @param grid the grid
  */
-extern "C" __global__ void mandlebrot_kernel(unsigned char** grid, int num_iterations){
+__global__ void mandlebrot_kernel(unsigned char** grid, int num_iterations, int my_rank){
     // Put some math code in here
+
+    // Pass result to image
 }
 
 /**
@@ -86,23 +88,9 @@ extern "C" bool launch_mandlebrot_kernel(int num_iterations, ushort block_size){
     int N = total_grid_size;
     int numBlocks = (N+block_size-1)/block_size;
 
-    // QUESTION: do we iterate here or in kernel?
-
     // Launch kernel
-    mandlebrot_kernel<<<numBlocks, block_size>>>(grid, num_iterations);
+    mandlebrot_kernel<<<numBlocks, block_size>>>(grid, num_iterations, my_rank);
     // Synchronize threads
     cudaDeviceSynchronize();
     return true;
-}
-
-/**
- * @brief Frees the memory previously allocated using cudaMallocManaged
- */
-extern "C" void freeCuda(){
-    // free individual columns
-    for (int i = 0; i < grid_width; i++){
-        cudaFree(grid[i]);
-    }
-    // finally free the overall grid
-	cudaFree(grid);
 }

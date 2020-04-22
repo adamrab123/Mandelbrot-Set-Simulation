@@ -9,6 +9,7 @@ int main() {
 
     // init image file
     init_output_file(height, width);
+    printf("File init success...\n");
 
     unsigned char image[height][width][3];
 
@@ -21,11 +22,11 @@ int main() {
             image[i][j][0] = (unsigned char)(((double) i + j) / (height + width) * 255); // blue
 
             // add pixel data to image
-            // write_pixel_to_file_sequential();
+            write_pixel_to_file_sequential(image[i][j], i, j);
         }
     }
     
-    // printf("Image generated!\n");
+    printf("Image generated!\n");
 
     return 0;
 }

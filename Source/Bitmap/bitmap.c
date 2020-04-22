@@ -9,12 +9,10 @@ const int file_header_size = 14; // format-required
 const int info_header_size = 40; // format-required
 
 const char *image_file_name = "output.bmp";
-const unsigned char padding[3] = {0, 0, 0}; // .bmp format padding array
 
 // Globals
 int _height;
 int _width;
-int _padding_size;
 
 // Methods
 /**
@@ -23,7 +21,7 @@ int _padding_size;
 unsigned char *_create_bmp_file_header() {
     
     // compute full file size
-    int file_size = file_header_size + info_header_size + (bytes_per_pixel * _width + _padding_size) * _height;
+    int file_size = file_header_size + info_header_size + (bytes_per_pixel * _width) * _height;
 
     // set file header (all from file format guidelines)
     static unsigned char file_header[] = {
@@ -92,9 +90,6 @@ void init_output_file(int height, int width) {
     _height = height;
     _width = width;
 
-    // compute padding size (math magic)
-    _padding_size = (4 - (width * bytes_per_pixel) % 4) % 4;
-
     // create .bmp file headers
     unsigned char* fileHeader = _create_bmp_file_header();
     unsigned char* infoHeader = _create_bmp_info_header();
@@ -103,14 +98,20 @@ void init_output_file(int height, int width) {
 
     fwrite(fileHeader, 1, file_header_size, f);
     fwrite(infoHeader, 1, info_header_size, f);
+
+    fclose(f);
 }
 
 /**
  * @brief Writes passed pixel to the output file using sequential C methods
  * 
  * @param pixel Array of size 3 containing values for each color
+ * 
+ * @param y The distance on the y-axis that the input pixel sits on the image
+ * 
+ * @param x The distance on the x-axis that the input pixel sits on the image
  */
-void write_pixel_to_file_sequential(unsigned char *pixel) {
+void write_pixel_to_file_sequential(unsigned char *pixel, int y, int x) {
 
     FILE *f = fopen(image_file_name, "wb");
 
@@ -120,8 +121,12 @@ void write_pixel_to_file_sequential(unsigned char *pixel) {
     //     fwrite(padding, 1, _padding_size, f);
     // }
 
+    // compute pixel offset
+    int offset = ((y + 1) * x * bytes_per_pixel) + file_header_size + info_header_size;
+
     // write pixel data to file at appropriate location
-    // TODO: implement with fseek
+    fseek(f, offset, SEEK_SET);
+    fwrite(pixel, bytes_per_pixel, 1, f);
 
     fclose(f);
 }
@@ -130,8 +135,12 @@ void write_pixel_to_file_sequential(unsigned char *pixel) {
  * @brief Writes passed pixel to the output file using parallel MPI methods
  * 
  * @param pixel Array of size 3 containing values for each color
+ * 
+ * @param y The distance on the y-axis that the input pixel sits on the image
+ * 
+ * @param x The distance on the x-axis that the input pixel sits on the image
  */
-void write_pixel_to_file_parallel(unsigned char *pixel) {
+void write_pixel_to_file_parallel(unsigned char *pixel, int y, int x) {
 
     FILE *f = fopen(image_file_name, "wb");
 

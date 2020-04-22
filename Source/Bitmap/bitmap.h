@@ -1,9 +1,6 @@
 #ifndef BITMAP_H
 #define BITMAP_H
 
-#include <stdio.h>
-#include <string.h>
-
 /**
  * @brief Initialize the .bmp output file with a given height and width
  * 

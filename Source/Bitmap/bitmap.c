@@ -1,5 +1,6 @@
 // Writes pixel data to .bmp file
 
+#include <mpi.h>
 #include <stdio.h>
 #include <string.h>
 #include "bitmap.h"
@@ -164,13 +165,14 @@ void write_pixel_to_file_sequential(unsigned char *pixel, int y, int x) {
  */
 void write_pixel_to_file_parallel(unsigned char *pixel, int y, int x) {
 
-    FILE *f = fopen(image_file_name, "rb+");
+    MPI_File f;
+    MPI_File_open(MPI_COMM_SELF, image_file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 
     // compute pixel offset
-    int offset = _compute_pixel_offset(y, x);
+    MPI_Offset offset = _compute_pixel_offset(y, x);
 
     // write pixel data to file at appropriate location
-    // TODO: implement with mpi
+    MPI_File_write_at(f, offset, pixel, bytes_per_pixel, MPI_UNSIGNED_CHAR, NULL);
 
-    fclose(f);
+    MPI_File_close(&f);
 }

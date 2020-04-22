@@ -9,22 +9,24 @@ int main() {
 
     // init image file
     init_output_file(height, width);
-    printf("File init success...\n");
-
-    unsigned char image[height][width][3];
 
     for(int i = 0; i < height; i++) {
         for(int j = 0; j < width; j++) {
 
+            unsigned char pixel[3];
+
             // create pixel primary color gradient
-            image[i][j][2] = (unsigned char)((double) i / height * 255);                 // red
-            image[i][j][1] = (unsigned char)((double) j / width * 255);                  // green
-            image[i][j][0] = (unsigned char)(((double) i + j) / (height + width) * 255); // blue
+            pixel[2] = (unsigned char)((double) i / height * 255);                 // red
+            pixel[1] = (unsigned char)((double) j / width * 255);                  // green
+            pixel[0] = (unsigned char)(((double) i + j) / (height + width) * 255); // blue
 
             // add pixel data to image
-            write_pixel_to_file_sequential(image[i][j], i, j);
+            write_pixel_to_file_sequential(pixel, i, j);
         }
     }
+
+    // unsigned char pixel[3] = {255, 0, 0};
+    // write_pixel_to_file_sequential(pixel, 1, 1);
     
     printf("Image generated!\n");
 

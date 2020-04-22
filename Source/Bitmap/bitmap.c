@@ -1,6 +1,7 @@
 // Writes pixel data to .bmp file
 
 #include <stdio.h>
+#include <string.h>
 #include "bitmap.h"
 
 // Constants
@@ -9,19 +10,32 @@ const int file_header_size = 14; // format-required
 const int info_header_size = 40; // format-required
 
 const char *image_file_name = "output.bmp";
+const unsigned char padding[3] = {0,0,0}; // .bmp format padding array
 
 // Globals
 int _height;
 int _width;
+int _padding_size;
 
 // Methods
+/**
+ * @brief Calculate the offset for a given pixel based on its coords
+ * 
+ * @param y The distance on the y-axis that the input pixel sits on the image
+ * 
+ * @param x The distance on the x-axis that the input pixel sits on the image
+ */
+int _compute_pixel_offset(int y, int x) {
+    return file_header_size + info_header_size + (y * (_width * bytes_per_pixel + _padding_size)) + (x * bytes_per_pixel);
+}
+
 /**
  * @brief Creates array containing .bmp format-required file header based in image specifications
  */
 unsigned char *_create_bmp_file_header() {
     
     // compute full file size
-    int file_size = file_header_size + info_header_size + (bytes_per_pixel * _width) * _height;
+    int file_size = file_header_size + info_header_size + (bytes_per_pixel * _width + _padding_size) * _height;
 
     // set file header (all from file format guidelines)
     static unsigned char file_header[] = {
@@ -90,6 +104,9 @@ void init_output_file(int height, int width) {
     _height = height;
     _width = width;
 
+    // compute padding size (math magic)
+    _padding_size = (4 - (width * bytes_per_pixel) % 4) % 4;
+
     // create .bmp file headers
     unsigned char* fileHeader = _create_bmp_file_header();
     unsigned char* infoHeader = _create_bmp_info_header();
@@ -98,6 +115,15 @@ void init_output_file(int height, int width) {
 
     fwrite(fileHeader, 1, file_header_size, f);
     fwrite(infoHeader, 1, info_header_size, f);
+
+    // write temp data and padding to file
+    unsigned char temp_data[_width * 3];
+    memset(temp_data, 255, _width * 3); // blank (white) image
+
+    for (int i = 0; i < _height; i++) {
+        fwrite(temp_data, bytes_per_pixel, _width, f);
+        fwrite(padding, 1, _padding_size, f);
+    }
 
     fclose(f);
 }
@@ -113,16 +139,10 @@ void init_output_file(int height, int width) {
  */
 void write_pixel_to_file_sequential(unsigned char *pixel, int y, int x) {
 
-    FILE *f = fopen(image_file_name, "wb");
-
-    // // write image data to file
-    // for (int i = 0; i < _height; i++) {
-    //     fwrite(data + (i * _width * bytes_per_pixel), bytes_per_pixel, _width, f);
-    //     fwrite(padding, 1, _padding_size, f);
-    // }
+    FILE *f = fopen(image_file_name, "rb+");
 
     // compute pixel offset
-    int offset = ((y + 1) * x * bytes_per_pixel) + file_header_size + info_header_size;
+    int offset = _compute_pixel_offset(y, x);
 
     // write pixel data to file at appropriate location
     fseek(f, offset, SEEK_SET);
@@ -142,13 +162,10 @@ void write_pixel_to_file_sequential(unsigned char *pixel, int y, int x) {
  */
 void write_pixel_to_file_parallel(unsigned char *pixel, int y, int x) {
 
-    FILE *f = fopen(image_file_name, "wb");
+    FILE *f = fopen(image_file_name, "rb+");
 
-    // // write image data to file
-    // for (int i = 0; i < _height; i++) {
-    //     fwrite(data + (i * _width * bytes_per_pixel), bytes_per_pixel, _width, f);
-    //     fwrite(padding, 1, _padding_size, f);
-    // }
+    // compute pixel offset
+    int offset = _compute_pixel_offset(y, x);
 
     // write pixel data to file at appropriate location
     // TODO: implement with mpi

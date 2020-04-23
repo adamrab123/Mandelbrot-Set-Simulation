@@ -81,13 +81,20 @@
     - `--iterations, -i`: The number of iterations to perform before determining whether a number belongs in the set or not.
         - default: 20
 
-    - `--outputfile, -o`: The name of the file to output the image to.
+    - `--output, -o`: The name of the file to output the image to if chunks=1, or the name of the directory to output files to if chunks>1.
 
     - `--blocksize, -b`: The number of threads per block to use in the computation.
 
         - default: TBD
 
         - The number of blocks to use will be computed from the total number of points to calculate and this value.
+
+    - `--chunk, -c`: The number of different bitmap image segments of the full image to generate.
+
+        - default: 1
+
+        - Files will be named `<row><col>.bmp`.
+            - Indexing starts at 0, and row 0 column 0 is the top left corner.
 
 ## Math
 
@@ -143,3 +150,28 @@
     - PascalCase for types.
     - alllowercase for file names/headers.
     - _leading_underscore for private functions.
+
+## File sizes
+
+- Compression results depend on the file contents.
+
+- The tests below were performed on a 24,884,010 byte bmp file.
+
+    - Convert bmp to png: 3,346,416 bytes.
+
+    - bmp to zip archive: 4,220,059 bytes
+
+- To approximate compressed file size given one dimension pixel count of a square image:
+
+    - d = number of pixels along one dimension of the image.
+
+    - fc = compression factor. Factor by which the compression algorithm will reduce image size.
+
+    - compressed size in bytes = (d^2 * 3) / cf
+
+    - Assuming fc = 4 (conservative estimate based on the test file which had cf ~= 7):
+
+        - d = 10,000: 75,000,000 bytes (75 Mb)
+        - d = 100,000: 7,500,000,000 bytes (7.5 Gb)
+        - d = 1,000,000: 750,000,000,000 bytes (750 Gb)
+

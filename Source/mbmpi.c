@@ -1,12 +1,9 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<unistd.h>
-#include<stdbool.h>
-#include<string.h>
-#include<mpi.h>
+#include <mbmpi.h>
 
-extern void init( int dim_width, int dim_height, int step, int myrank, int numranks );
-extern bool launch_mandlebrot_kernel( int num_iterations, ushort block_size );
+#include "args.h"
+
+extern void cuda_init(const Arguments *args, int myranks, int numranks);
+extern bool launch_mandlebrot_kernel(int num_iterations, ushort block_size);
 
 /**
  * @brief Starts the kernel with for each rank and assigns each rank a portion of the grid
@@ -19,12 +16,14 @@ extern bool launch_mandlebrot_kernel( int num_iterations, ushort block_size );
  * @param num_iterations number of iterations per point
  * @param block_size number of threads per block
  */
-void start_MPI(int argc, char *argv[], int dim_width, int dim_height, int step, int num_iterations, int block_size){
+void start_MPI(const Arguments *args){
     int myrank, numranks;
-    MPI_Init(&argc, &argv);
+    MPI_Init(NULL, NULL);
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     MPI_Comm_size(MPI_COMM_WORLD, &numranks);
-    init(dim_width, dim_height, step, myrank, numranks ;
+
+    cuda_init(args, myrank, numranks);
+
     launch_mandlebrot_kernel(num_iterations, block_size);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Finalize();

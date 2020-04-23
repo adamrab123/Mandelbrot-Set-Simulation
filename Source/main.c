@@ -1,7 +1,8 @@
+#include <stdlib.h>
 #include <stdio.h>  
 #include <unistd.h>  
-#include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 
 #include "args.h"
 
@@ -17,7 +18,7 @@
  *
  * @return An @c Arguments instance with user provided parameter inputts
  */  
-Arguments getArgs(int argc, char *argv[]) { 
+Arguments get_args(int argc, char *argv[]) { 
 
     // setting all parameters to their default values
     int x_min = -2;
@@ -28,7 +29,6 @@ Arguments getArgs(int argc, char *argv[]) {
     int iterations = 20;
     char* output_file = "output.bmp";
     int block_size = 100;
-      
 
     int opt;
     // defining what parameters getopt needs to look for
@@ -91,16 +91,6 @@ Arguments getArgs(int argc, char *argv[]) {
         printf("extra arguments: %s\n", argv[optind]);
     } 
 
-    // printf(" *** DONE PARSING COMMAND LINE ARGUMENTS\n");
-    // printf("x_min is now %d\n", x_min);
-    // printf("x_max is now %d\n", x_max);
-    // printf("y_min is now %d\n", y_min);
-    // printf("y_max is now %d\n", y_max);
-    // printf("steps is now %.10f\n", steps);
-    // printf("iterations is now %d\n", iterations);
-    // printf("output_file is now %s\n", output_file);
-    // printf("block_size is now %d\n", block_size);
-
     Arguments arg;
 
 	arg.x_min = x_min;
@@ -113,5 +103,10 @@ Arguments getArgs(int argc, char *argv[]) {
 	arg.block_size = block_size;
 
 	return arg;
-
 } 
+
+int main(int argc, char **argv) {
+    Arguments args = get_args(argc, argv);
+
+    start_mpi(args);
+}

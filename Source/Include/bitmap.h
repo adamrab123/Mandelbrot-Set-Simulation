@@ -1,6 +1,33 @@
 #ifndef BITMAP_H
 #define BITMAP_H
 
+#include <stdio.h>
+#include <mpi.h>
+
+/**
+ * @brief Represents an RGB color with red, green, and blue integer fields on [0, 255].
+ */
+typedef struct {
+    unsigned char red;
+    unsigned char green;
+    unsigned char blue;
+} Rgb;
+
+typedef struct {
+    // Public.
+    char *image_file_name;
+    FILE *serial_file;
+    MPI_File *parallel_file;
+    int height;
+    int width;
+
+    // Private.
+    int _padding_size;
+} Bitmap;
+
+enum FileType { SERIAL, PARALLEL };
+typedef enum FileType FileType;
+
 /**
  * @brief Initialize the .bmp output file with a given height and width
  * 
@@ -9,7 +36,9 @@
  * @param width The image width in pixels
  * 
  */
-void init_output_file(int height, int width);
+Bitmap *Bitmap_init(int width, int height, const char *image_file_name, FileType file_type);
+
+void Bitmap_free(Bitmap *self);
 
 /**
  * @brief Writes passed pixel to the output file using sequential C methods
@@ -20,7 +49,7 @@ void init_output_file(int height, int width);
  * 
  * @param x The distance on the x-axis that the input pixel sits on the image
  */
-void write_pixel_to_file_sequential(unsigned char *pixel, int y, int x);
+void Bitmap_write_pixel_sequential(Bitmap *self, Rgb pixel, int x, int y);
 
 /**
  * @brief Writes passed pixel to the output file using parallel MPI methods
@@ -31,6 +60,6 @@ void write_pixel_to_file_sequential(unsigned char *pixel, int y, int x);
  * 
  * @param x The distance on the x-axis that the input pixel sits on the image
  */
-void write_pixel_to_file_parallel(unsigned char *pixel, int y, int x);
+void Bitmap_write_pixel_parallel(Bitmap *self, Rgb pixel, int x, int y);
 
 #endif

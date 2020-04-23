@@ -32,7 +32,7 @@ Arguments getArgs(int argc, char *argv[]) {
 
     int opt;
     // defining what parameters getopt needs to look for
-    while((opt = getopt(argc, argv, ":x:X:y:Y:s:i:i:b:o:lx")) != -1) { 
+    while((opt = getopt(argc, argv, ":x:X:y:Y:s:i:b:o:lx")) != -1) { 
         // iterating through possible matches
         // for int options, convert to int. 
         // for float convert to float, etc 

@@ -119,14 +119,14 @@ Rgb _MB_rgb_color(const MB_Point *point) {
 Rgb _MB_hsv_color(const MB_Point *point) {
     double color_percent = _MB_normalized_iterations(point);
 
-    int hue = floor(color_percent * 360);
+    int hue = floor(color_percent * 320);
     int saturation = 1;
-    int value = 1;
+    int value = 0;
 
     // If the point did not diverge after all iterations finished, it is in the set.
     // Color it black.
-    if (point->iters_performed == point->max_iters) {
-        value = 0;
+    if (MB_diverged(point)) {
+        value = 1;
     }
 
     return _MB_hsv_to_rgb(hue, saturation, value);
@@ -147,9 +147,9 @@ Rgb _MB_hsv_to_rgb(int hue, double saturation, double value) {
     double m = value - c;
 
     // c, x, 0 become c1, c2, c3.
-    int c1 = (c + m) * 255;
-    int c2 = (x + m) * 255;
-    int c3 = (m) * 255;
+    unsigned char c1 = (c + m) * 255;
+    unsigned char c2 = (x + m) * 255;
+    unsigned char c3 = (m) * 255;
 
     Rgb color;
 
@@ -208,7 +208,8 @@ Rgb _MB_hsv_to_rgb(int hue, double saturation, double value) {
  */
 double _MB_normalized_iterations(const MB_Point *point) {
     // Smooth is on (0, max_iter).
-    int smooth = point->iters_performed + 1 - logl(logl(cabsl(point->z_final))) / logl(2);
+    long double smooth = point->iters_performed + 1 - logl(logl(cabsl(point->z_final))) / logl(2);
+    printf("smooth: %Lf\n", smooth);
     // Normalize smooth to be on (0, 1).
     return (double)smooth / point->max_iters;
 }

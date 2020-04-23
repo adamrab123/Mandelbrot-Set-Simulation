@@ -5,9 +5,9 @@
 
 #include "mandelbrot.h"
 
-MB_Rgb _MB_rgb_color(const MB_Point *point);
-MB_Rgb _MB_hsv_to_rgb(int hue, double saturation, double value);
-MB_Rgb _MB_hsv_color(const MB_Point *point);
+Rgb _MB_rgb_color(const MB_Point *point);
+Rgb _MB_hsv_to_rgb(int hue, double saturation, double value);
+Rgb _MB_hsv_color(const MB_Point *point);
 double _MB_normalized_iterations(const MB_Point *point);
 
 /**
@@ -56,8 +56,8 @@ MB_Point MB_iterate_mandelbrot(long double c_real, long double c_img, int iterat
  *
  * @return An RGB color representation of @p point using its Mandelbrot set information.
  */
-MB_Rgb MB_color_of(const MB_Point *point, MB_ColorMap conversion) {
-    MB_Rgb color;
+Rgb MB_color_of(const MB_Point *point, MB_ColorMap conversion) {
+    Rgb color;
 
     if (conversion == HSV_TO_RGB) {
         color = _MB_hsv_color(point);
@@ -79,11 +79,11 @@ MB_Rgb MB_color_of(const MB_Point *point, MB_ColorMap conversion) {
  *
  * @return An RGB representation of @p point.
  */
-MB_Rgb _MB_rgb_color(const MB_Point *point) {
+Rgb _MB_rgb_color(const MB_Point *point) {
     // Produces number on range (0, 3).
     double color_fraction = _MB_normalized_iterations(point) * 3;
 
-    MB_Rgb color;
+    Rgb color;
 
     if (color_fraction < 1) {
         color.red = 255;
@@ -116,7 +116,7 @@ MB_Rgb _MB_rgb_color(const MB_Point *point) {
  *
  * @return An RGB representation of @p point converted from an HSV value.
  */
-MB_Rgb _MB_hsv_color(const MB_Point *point) {
+Rgb _MB_hsv_color(const MB_Point *point) {
     double color_percent = _MB_normalized_iterations(point);
 
     int hue = floor(color_percent * 360);
@@ -141,7 +141,7 @@ MB_Rgb _MB_hsv_color(const MB_Point *point) {
  *
  * @return An RGB color representation that is identical to the provided HSV color representation.
  */
-MB_Rgb _MB_hsv_to_rgb(int hue, double saturation, double value) {
+Rgb _MB_hsv_to_rgb(int hue, double saturation, double value) {
     double c = value * saturation;
     double x = c * (1 - abs(hue / 60 % 2 - 1));
     double m = value - c;
@@ -151,7 +151,7 @@ MB_Rgb _MB_hsv_to_rgb(int hue, double saturation, double value) {
     int c2 = (x + m) * 255;
     int c3 = (m) * 255;
 
-    MB_Rgb color;
+    Rgb color;
 
     int norm_hue = hue / 60;
 

@@ -6,6 +6,9 @@
 #include<cuda.h>
 #include<cuda_runtime.h>
 
+#include "mandelbrot.h"
+#include "bitmap.h"
+
 // Useful variables
 int x_axis, y_axis;
 int grid_width, grid_height;
@@ -22,16 +25,13 @@ int start_x, end_x; //points that each rank is responsible for
  * @param myrank the current rank
  * @param numranks the total number of ranks
  */
-extern "C" void init( int dim_width, int dim_height, int step, int myrank, int numranks )
-{
-    x_axis = dim_width;
-    y_axis = dim_height;
-    step_size = step;
+extern "C" void cuda_init(const Arguments *args, int my_ranks, int num_ranks) {
+    x_axis = args->x_max - args->x_min;
+    y_axis = args->y_max - args->y_min;
+    step_size = args->step;
     grid_width = int(x_axis * 1.0/step_size);
     grid_height = int(y_axis * 1.0/step_size);
-    my_rank = myrank;
-    num_ranks = numranks;
-    
+
     // Divide up responsibility of grid as best as possible
     // Case 1: Equal responsibility
     if (grid_width % num_ranks == 0){
@@ -60,9 +60,9 @@ extern "C" void init( int dim_width, int dim_height, int step, int myrank, int n
         printf(" Unable to determine cuda device count, error is %d, count is %d\n", cE, cudaDeviceCount );
         exit(-1);
     }
-    if( (cE = cudaSetDevice( myrank % cudaDeviceCount )) != cudaSuccess )
+    if( (cE = cudaSetDevice( my_rank % cudaDeviceCount )) != cudaSuccess )
     {
-        printf(" Unable to have rank %d set to cuda device %d, error is %d \n", myrank, (myrank % cudaDeviceCount), cE);
+        printf(" Unable to have rank %d set to cuda device %d, error is %d \n", my_rank, (my_rank % cudaDeviceCount), cE);
         exit(-1);
     }
 }
@@ -72,7 +72,27 @@ extern "C" void init( int dim_width, int dim_height, int step, int myrank, int n
  * 
  * @param grid the grid
  */
-__global__ void mandlebrot_kernel(unsigned char** grid, int num_iterations, int my_rank){
+__global__ void mandlebrot_kernel(int num_iterations, int my_rank){
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+
+    for(; index < worldWidth * worldHeight; index += stride) {
+        // x coordinate.
+        long double c_real = index / worldWidth;
+        // y coordinate.
+        long double c_imag = index % worldWidth;
+
+        MB_Point point = MB_iterate_mandelbrot(c_real, c_imag, num_iterations);
+        MB_Rgb color = MB_color_of(&point, DIRECT_RGB);
+
+        int x_bitmap = (c_real + x_min) / step;
+        int y_bitmap = (c_imag + y_min) / step;
+        write_pixel_to_file_parallel(&color, x_bitmap, y_bitmap);
+    }
+
+
+
+
     // Put some math code in here
 
     // Pass result to image
@@ -89,7 +109,7 @@ extern "C" bool launch_mandlebrot_kernel(int num_iterations, ushort block_size){
     int numBlocks = (N+block_size-1)/block_size;
 
     // Launch kernel
-    mandlebrot_kernel<<<numBlocks, block_size>>>(grid, num_iterations, my_rank);
+    mandlebrot_kernel<<<numBlocks, block_size>>>(num_iterations);
     // Synchronize threads
     cudaDeviceSynchronize();
     return true;

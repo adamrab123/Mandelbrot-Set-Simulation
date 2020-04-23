@@ -4,6 +4,8 @@
 #include<stdbool.h>
 #include<complex.h>
 
+#include "bitmap.h"
+
 // BEGIN TYPEDEFS
 
 typedef long double complex MB_Complex;
@@ -20,17 +22,9 @@ typedef struct {
     MB_Complex z_final; /** The value of z after @c iters_performed iterations of @c c */
 } MB_Point;
 
-/**
- * @brief Represents an RGB color with red, green, and blue integer fields on [0, 255].
- */
-typedef struct {
-    int red;
-    int green;
-    int blue;
-} MB_Rgb;
 
 /**
- * @brief Represents conversion from an @c MB_Point to an @c MB_Rgb color that can be passed to @c MB_color_of.
+ * @brief Represents conversion from an @c MB_Point to an @c Rgb color that can be passed to @c MB_color_of.
  */
 enum MB_ColorMap {
     HSV_TO_RGB, /** Uses a normalized iteration count to generate an HSV color, and converts this to an RGB color.  */
@@ -43,7 +37,7 @@ typedef enum MB_ColorMap MB_ColorMap;
 
 MB_Point MB_iterate_mandelbrot(long double c_real, long double c_img, int iterations);
 
-MB_Rgb MB_color_of(const MB_Point *point, MB_ColorMap conversion);
+Rgb MB_color_of(const MB_Point *point, MB_ColorMap conversion);
 
 bool MB_diverged(const MB_Point *point);
 

@@ -2,6 +2,7 @@
 
 #include <mpi.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "bitmap.h"
 
@@ -11,18 +12,21 @@ const int FILE_HEADER_SIZE = 14; // format-required
 const int INFO_HEADER_SIZE = 40; // format-required
 const unsigned char PADDING[3] = {0,0,0}; // .bmp format padding array
 
+// Function declarations
 void _init_parallel(Bitmap *self, const char *file_name);
 void _init_serial(Bitmap *self, const char *file_name);
 int _compute_pixel_offset(const Bitmap *self, int x, int y);
 unsigned char *_create_bmp_file_header(const Bitmap *self);
-unsigned char *_create_bmp_file_header(const Bitmap *self);
+unsigned char *_create_bmp_info_header(const Bitmap *self);
 
 /**
- * @brief Initialize the .bmp output file with a given height and width
+ * @brief Initialize the Btimap object and .bmp output file
  * 
- * @param height The image height in pixels
- * 
- * @param width The image width in pixels
+ * @param width Image width
+ * @param height Image height
+ * @param image_file_name Output file name
+ * @param file_type Designates Bitmap as setup for either a @c SERIAL or @c PARALLEL computation environment
+ * @return @c Bitmap* The Bitmap object to be output
  */
 Bitmap *Bitmap_init(int width, int height, const char *image_file_name, FileType file_type) {
     Bitmap *self = calloc(1, sizeof(Bitmap));
@@ -44,6 +48,11 @@ Bitmap *Bitmap_init(int width, int height, const char *image_file_name, FileType
     return self;
 }
 
+/**
+ * @brief Bitmap destructor
+ * 
+ * @param self Bitmap object to be removed from memory
+ */
 void Bitmap_free(Bitmap *self) {
     if (self->serial_file != NULL) {
         fclose(self->serial_file);
@@ -57,16 +66,15 @@ void Bitmap_free(Bitmap *self) {
 }
 
 /**
- * @brief Writes passed pixel to the output file using sequential C methods
+ * @brief Writes passed pixel to the output file using serial C methods
  * 
- * @param pixel Array of size 3 containing values for each color
- * 
- * @param y The distance on the y-axis that the input pixel sits on the image
- * 
- * @param x The distance on the x-axis that the input pixel sits on the image
+ * @param self Bitmap object
+ * @param pixel Rgb enum containing color data
+ * @param x Pixel 'X' coordinate (offset for image plane)
+ * @param y Pixel 'Y' coordinate (offest for image plane)
  */
-void Bitmap_write_pixel_sequential(Bitmap *self, Rgb pixel, int x, int y) {
-    unsigned char pixel_data[3] = {pixel.red, pixel.green, pixel.blue};
+void Bitmap_write_pixel_serial(Bitmap *self, Rgb pixel, int x, int y) {
+    unsigned char pixel_data[3] = {pixel.blue, pixel.green, pixel.red};
 
     // compute pixel offset
     int offset = _compute_pixel_offset(self, x, y);
@@ -79,14 +87,13 @@ void Bitmap_write_pixel_sequential(Bitmap *self, Rgb pixel, int x, int y) {
 /**
  * @brief Writes passed pixel to the output file using parallel MPI methods
  * 
- * @param pixel Array of size 3 containing values for each color
- * 
- * @param y The distance on the y-axis that the input pixel sits on the image
- * 
- * @param x The distance on the x-axis that the input pixel sits on the image
+ * @param self Bitmap object
+ * @param pixel Rgb enum containing color data
+ * @param x Pixel 'X' coordinate (offset for image plane)
+ * @param y Pixel 'Y' coordinate (offest for image plane)
  */
 void Bitmap_write_pixel_parallel(Bitmap *self, Rgb pixel, int x, int y) {
-    unsigned char pixel_data[3] = {pixel.red, pixel.green, pixel.blue};
+    unsigned char pixel_data[3] = {pixel.blue, pixel.green, pixel.red};
 
     // compute pixel offset
     MPI_Offset offset = _compute_pixel_offset(self, x, y);
@@ -95,6 +102,12 @@ void Bitmap_write_pixel_parallel(Bitmap *self, Rgb pixel, int x, int y) {
     MPI_File_write_at(self->parallel_file, offset, pixel_data, BYTES_PER_PIXEL, MPI_UNSIGNED_CHAR, NULL);
 }
 
+/**
+ * @brief Initialize parallel .bmp file and store pointer in Bitmap object
+ * 
+ * @param self Bitmap object
+ * @param file_name .bmp file name
+ */
 void _init_parallel(Bitmap *self, const char *file_name) {
     self->serial_file = NULL;
     MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &self->parallel_file);
@@ -113,6 +126,12 @@ void _init_parallel(Bitmap *self, const char *file_name) {
     }
 }
 
+/**
+ * @brief Initialize serial .bmp file and store pointer in Bitmap object
+ * 
+ * @param self Bitmap object
+ * @param file_name .bmp file name
+ */
 void _init_serial(Bitmap *self, const char *file_name) {
     self->parallel_file = NULL;
     self->serial_file = fopen(file_name, "wb");
@@ -140,9 +159,8 @@ void _init_serial(Bitmap *self, const char *file_name) {
  *        The formula takes into account both header sizes, the bytes per pixel value
  *        for each pixel and the amount of padding present in each row.
  * 
- * @param y The distance on the y-axis that the input pixel sits on the image
- * 
- * @param x The distance on the x-axis that the input pixel sits on the image
+ * @param x Pixel 'X' coordinate (offset for image plane)
+ * @param y Pixel 'Y' coordinate (offest for image plane)
  */
 int _compute_pixel_offset(const Bitmap *self, int x, int y) {
     return FILE_HEADER_SIZE + INFO_HEADER_SIZE + (y * (self->width * BYTES_PER_PIXEL + self->_padding_size)) + (x * BYTES_PER_PIXEL);
@@ -150,6 +168,8 @@ int _compute_pixel_offset(const Bitmap *self, int x, int y) {
 
 /**
  * @brief Creates array containing .bmp format-required file header based in image specifications
+ * 
+ * @param self Bitmap object
  */
 unsigned char *_create_bmp_file_header(const Bitmap *self) {
     
@@ -177,6 +197,8 @@ unsigned char *_create_bmp_file_header(const Bitmap *self) {
 
 /**
  * @brief Creates array containing .bmp format-required info header based in image specifications
+ * 
+ * @param self Bitmap object
  */
 unsigned char *_create_bmp_info_header(const Bitmap *self) {
 

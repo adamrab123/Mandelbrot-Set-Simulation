@@ -3,7 +3,7 @@
 #include<unistd.h>
 #include<stdbool.h>
 #include<string.h>
-#include <mpi.h>
+#include<mpi.h>
 
 extern void init( int dim_width, int dim_height, int step, int myrank, int numranks );
 extern bool launch_mandlebrot_kernel( int num_iterations, ushort block_size );

@@ -1,5 +1,4 @@
-Source/**.out
-**.out
+**/*.out
 .ipynb_checkpoints/*
 .vscode/settings.json
 .vscode/settings.json

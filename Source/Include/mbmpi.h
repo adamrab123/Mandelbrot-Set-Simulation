@@ -8,8 +8,6 @@
 #include<string.h>
 #include<mpi.h>
 
-#include ""
-
-void start_MPI();
+void start_mpi();
 
 #endif // MBMPI_H

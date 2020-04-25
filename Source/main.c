@@ -5,6 +5,7 @@
 #include <getopt.h>
 
 #include "args.h"
+#include "mbmpi.h"
 
 /**
  * @brief Parses the given argc,argv and modifies program parameters 
@@ -97,7 +98,7 @@ Arguments get_args(int argc, char *argv[]) {
 	arg.x_max = x_max;
 	arg.y_min = y_min;
 	arg.y_max = y_max;
-	arg.steps = steps;
+	arg.step_size = steps;
 	arg.iterations = iterations;
 	arg.output_file = output_file;
 	arg.block_size = block_size;

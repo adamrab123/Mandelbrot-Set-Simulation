@@ -10,7 +10,7 @@ typedef struct {
     int x_max;
     int y_min;
     int y_max;
-    float steps;
+    float step_size;
     int iterations;
     char* output_file;
     int block_size;

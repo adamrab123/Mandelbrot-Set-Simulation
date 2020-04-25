@@ -214,7 +214,7 @@ double _MB_normalized_iterations(const MB_Point *point) {
 }
 
 /**
- * @brief Determines whether @p point diverged after its maximum number of iterations of the Mandlebrot set calculation.
+ * @brief Determines whether @p point diverged after its maximum number of iterations of the mandelbrot set calculation.
  *
  * @param point The point to determine divergence for.
  *

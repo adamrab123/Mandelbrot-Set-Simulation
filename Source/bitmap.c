@@ -99,7 +99,7 @@ void Bitmap_write_pixel_parallel(Bitmap *self, Rgb pixel, int x, int y) {
     MPI_Offset offset = _compute_pixel_offset(self, x, y);
 
     // write pixel data to file at appropriate location
-    MPI_File_write_at(self->parallel_file, offset, pixel_data, BYTES_PER_PIXEL, MPI_UNSIGNED_CHAR, NULL);
+    MPI_File_write_at(*self->parallel_file, offset, pixel_data, BYTES_PER_PIXEL, MPI_UNSIGNED_CHAR, NULL);
 }
 
 /**
@@ -110,7 +110,7 @@ void Bitmap_write_pixel_parallel(Bitmap *self, Rgb pixel, int x, int y) {
  */
 void _init_parallel(Bitmap *self, const char *file_name) {
     self->serial_file = NULL;
-    MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &self->parallel_file);
+    MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, self->parallel_file);
 
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -121,8 +121,8 @@ void _init_parallel(Bitmap *self, const char *file_name) {
         unsigned char* info_header = _create_bmp_info_header(self);
 
         // Arguments are file, offset, data, data_size, data_type, status.
-        MPI_File_write_at(self->parallel_file, 0, file_header, FILE_HEADER_SIZE, MPI_UNSIGNED_CHAR, NULL);
-        MPI_File_write_at(self->parallel_file, FILE_HEADER_SIZE, info_header, INFO_HEADER_SIZE, MPI_UNSIGNED_CHAR, NULL);
+        MPI_File_write_at(*self->parallel_file, 0, file_header, FILE_HEADER_SIZE, MPI_UNSIGNED_CHAR, NULL);
+        MPI_File_write_at(*self->parallel_file, FILE_HEADER_SIZE, info_header, INFO_HEADER_SIZE, MPI_UNSIGNED_CHAR, NULL);
     }
 }
 

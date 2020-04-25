@@ -1,7 +1,7 @@
 #include <mbmpi.h>
 
 #include "args.h"
-#include "kernel.h"
+#include "kernel.cuh"
 #include "bitmap.h"
 
 int _get_offset(int grid_height);
@@ -29,7 +29,7 @@ void start_mpi(const Arguments *args) {
 
     Bitmap *bitmap = Bitmap_init(grid_width, grid_height, args->output_file, PARALLEL);
 
-    int grid_offset_y = get_offset(grid_height);
+    int grid_offset_y = _get_offset(grid_height);
 
     launch_mandelbrot_kernel(bitmap, grid_width, grid_height, grid_offset_y, args->iterations, args->block_size);
     MPI_Barrier(MPI_COMM_WORLD);

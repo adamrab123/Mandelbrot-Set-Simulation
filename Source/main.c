@@ -5,6 +5,7 @@
 #include <getopt.h>
 
 #include "args.h"
+#include "mbmpi.h"
 
 /**
  * @brief Parses the given argc,argv and modifies program parameters 

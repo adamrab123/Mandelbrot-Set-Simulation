@@ -8,7 +8,6 @@
 #include<complex.h>
 
 #include "mandelbrot.h"
-#include "bitmap.h"
 #include "args.h"
 
 // Used for bitmap to/from complex conversions.
@@ -33,7 +32,7 @@ void _complex_to_bitmap(long double real, long double imag, int *x, int *y) {
  * @param grid the grid
  */
 // __global__ void _mandelbrot_kernel(unsigned char ** grid, Bitmap *bitmap, int grid_width, int grid_height, int grid_offset_y, int iterations){
-__global__ void _mandelbrot_kernel(Rgb ** grid, Bitmap *bitmap, int grid_width, int grid_height, int grid_offset_y, int iterations){
+__global__ void _mandelbrot_kernel(Rgb ** grid, int grid_width, int grid_height, int grid_offset_y, int iterations){
 
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
@@ -59,12 +58,12 @@ __global__ void _mandelbrot_kernel(Rgb ** grid, Bitmap *bitmap, int grid_width, 
  * @param block_size number of threads per block
  */
 // extern "C" void launch_mandelbrot_kernel(unsigned char ** grid, Bitmap *bitmap, int grid_width, int grid_height, int grid_offset_y, int iterations, int block_size){
-extern "C" void launch_mandelbrot_kernel(Rgb ** grid, Bitmap *bitmap, int grid_width, int grid_height, int grid_offset_y, int iterations, int block_size){
+extern "C" void launch_mandelbrot_kernel(Rgb ** grid, int grid_width, int grid_height, int grid_offset_y, int iterations, int block_size){
     int N = grid_width * grid_height;
     int num_blocks = (N + block_size - 1) / block_size;
 
     // Launch kernel
-    _mandelbrot_kernel<<<num_blocks, block_size>>>(grid, bitmap, grid_width, grid_height, grid_offset_y, args->iterations);
+    _mandelbrot_kernel<<<num_blocks, block_size>>>(grid, grid_width, grid_height, grid_offset_y, args->iterations);
     // Synchronize threads
     cudaDeviceSynchronize();
 }

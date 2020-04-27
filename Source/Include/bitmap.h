@@ -4,14 +4,7 @@
 #include <mpi.h>
 #include <stdio.h>
 
-/**
- * @brief Represents an RGB color with red, green, and blue integer fields on [0, 255].
- */
-typedef struct {
-    unsigned char blue;
-    unsigned char green;
-    unsigned char red;
-} Rgb;
+#include "mandelbrot.h"
 
 /**
  * @brief Bitmap object containing file pointers and useful info 

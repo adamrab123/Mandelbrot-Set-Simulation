@@ -1,9 +1,12 @@
 #include <mbmpi.h>
 
 #include "args.h"
-#include "kernel.h"
 #include "bitmap.h"
 #include "mandelbrot.h"
+
+// Cuda functions
+extern void cuda_init(int my_rank);
+extern void launch_mandelbrot_kernel(Rgb ** grid, Bitmap *bitmap, int grid_width, int grid_height, int grid_offset_y, int iterations, int block_size);
 
 int _get_offset(int grid_height);
 Rgb ** allocate_grid(int grid_width, int grid_height);

@@ -36,17 +36,6 @@ void start_mpi(const Arguments *args) {
     MPI_Finalize();
 }
 
-
-void _bitmap_to_complex(int x, int y, long double *real, long double *imag) {
-    *real = x * step_size + x_min;
-    *imag = y * step_size + y_min;
-}
-
-void _complex_to_bitmap(long double real, long double imag, int *x, int *y) {
-    *x = round((real - x_min) / step_size);
-    *y = round((imag - y_min) / step_size);
-}
-
 /**
  * @brief Allocates the grid of size @p grid_width by @p grid_height using cudaMallocManaged
  * 
@@ -61,7 +50,6 @@ Rgb ** allocate_grid(int grid_width, int grid_height){
 
     // allocate rows
     grid = calloc(grid_width, sizeof(Rgb *)); 
-
 
     // allocate columns
     for (int i = 0; i < grid_width; i++){

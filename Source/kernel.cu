@@ -15,22 +15,14 @@
 long double step_size;
 long double x_min, y_min;
 
-void _bitmap_to_complex(int x, int y, long double *real, long double *imag) {
-    *real = x * step_size + x_min;
-    *imag = y * step_size + y_min;
-}
-
-void _complex_to_bitmap(long double real, long double imag, int *x, int *y) {
-    *x = round((real - x_min) / step_size);
-    *y = round((imag - y_min) / step_size);
-}
-
 /**
  * @brief Iterates on grid to generate mandelbrot set points
  * 
  * @param grid the grid
  */
-__global__ void _mandelbrot_kernel(Bitmap *bitmap, int grid_width, int grid_height, int grid_offset_y, int iterations){
+// __global__ void _mandelbrot_kernel(unsigned char ** grid, Bitmap *bitmap, int grid_width, int grid_height, int grid_offset_y, int iterations){
+__global__ void _mandelbrot_kernel(Rgb ** grid, Bitmap *bitmap, int grid_width, int grid_height, int grid_offset_y, int iterations){
+
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
 
@@ -44,10 +36,7 @@ __global__ void _mandelbrot_kernel(Bitmap *bitmap, int grid_width, int grid_heig
         MB_Point point = MB_iterate_mandelbrot(c_real, c_imag, iterations);
         Rgb color = MB_color_of(&point, DIRECT_RGB);
 
-        int bitmap_x, bitmap_y;
-        _complex_to_bitmap(creal(point.c), imag(point.c), &bitmap_x, &bitmap_y);
-
-        Bitmap_write_pixel_parallel(bitmap, color, bitmap_x, bitmap_y);
+        grid[grid_x][grid_y] = color;
     }
 }
 
@@ -57,12 +46,13 @@ __global__ void _mandelbrot_kernel(Bitmap *bitmap, int grid_width, int grid_heig
  * @param num_iterations number of iterations per point
  * @param block_size number of threads per block
  */
-extern "C" void launch_mandelbrot_kernel(Bitmap *bitmap, int grid_width, int grid_height, int grid_offset_y, int iterations, int block_size){
+// extern "C" void launch_mandelbrot_kernel(unsigned char ** grid, Bitmap *bitmap, int grid_width, int grid_height, int grid_offset_y, int iterations, int block_size){
+extern "C" void launch_mandelbrot_kernel(Rgb ** grid, Bitmap *bitmap, int grid_width, int grid_height, int grid_offset_y, int iterations, int block_size){
     int N = grid_width * grid_height;
     int num_blocks = (N + block_size - 1) / block_size;
 
     // Launch kernel
-    _mandelbrot_kernel<<<num_blocks, block_size>>>(bitmap, grid_width, grid_height, grid_offset_y, args->iterations);
+    _mandelbrot_kernel<<<num_blocks, block_size>>>(grid, bitmap, grid_width, grid_height, grid_offset_y, args->iterations);
     // Synchronize threads
     cudaDeviceSynchronize();
 }

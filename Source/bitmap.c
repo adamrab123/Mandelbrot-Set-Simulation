@@ -104,20 +104,42 @@ void Bitmap_write_pixel_parallel(Bitmap *self, Rgb pixel, int x, int y) {
 }
 
 /**
- * @brief Writes passed pixel array to the output file using parallel MPI methods
+ * @brief Writes passed pixel rows to the output file using parallel MPI methods
  * 
  * @param self Bitmap object
- * @param pixels Array of pixels (Rgb's)
- * @param pixels_length Length of the pixels array
- * @param x Starting pixel 'X' coordinate (offset for image plane)
- * @param y Starting pixel 'Y' coordinate (offset for image plane)
+ * @param pixels Array of pixel rows
+ * @param num_rows Number of pixel rows
+ * @param start_row 'Y' coordinate of the starting row (offset for image plane)
  */
-void Bitmap_write_pixels_parallel(Bitmap *self, Rgb *pixels, int pixels_length, int x, int y) {
+void Bitmap_write_rows_parallel(Bitmap *self, Rgb **pixels, int num_rows, int start_row) {
 
-    // Write each pixel to file
-    for (int i = 0; i < pixels_length; i++) {
-        Bitmap_write_pixel_parallel(self, pixels[i], x, y);
+    // compute pixel offset
+    MPI_Offset offset = _compute_pixel_offset(self, 0, start_row);
+
+    // compute padding needed and size of array to be written
+    int pixels_data_length = num_rows * ((self->width * BYTES_PER_PIXEL) + self->_padding_size);
+    unsigned char pixels_data[pixels_data_length];
+
+    int index = 0;
+    for (int i = 0; i < num_rows; i++) {
+        for (int j = 0; j < self->width; j++) {
+
+            // add pixel to array to be written
+            pixels_data[index]      = pixels[i][j].blue;
+            pixels_data[index + 1]  = pixels[i][j].green;
+            pixels_data[index + 2]  = pixels[i][j].red;
+
+            index += 3;
+        }
+
+        // add padding to end of row in array to be written
+        for (int k = 0; k < self->_padding_size; k++) {
+            pixels_data[index] = PADDING[0];
+            index++;
+        }
     }
+
+    MPI_File_write_at(*self->parallel_file, offset, pixels_data, pixels_data_length, MPI_UNSIGNED_CHAR, NULL);
 }
 
 // Private methods

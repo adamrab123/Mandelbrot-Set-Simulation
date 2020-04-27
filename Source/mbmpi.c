@@ -6,6 +6,7 @@
 #include "mandelbrot.h"
 
 int _get_offset(int grid_height);
+Rgb ** allocate_grid(int grid_width, int grid_height);
 
 /**
  * @brief Starts the kernel with for each rank and assigns each rank a portion of the grid

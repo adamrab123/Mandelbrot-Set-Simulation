@@ -15,11 +15,17 @@
 long double step_size;
 long double x_min, y_min;
 
-
 void _bitmap_to_complex(int x, int y, long double *real, long double *imag) {
     *real = x * step_size + x_min;
     *imag = y * step_size + y_min;
 }
+
+/*
+void _complex_to_bitmap(long double real, long double imag, int *x, int *y) {
+    *x = round((real - x_min) / step_size);
+    *y = round((imag - y_min) / step_size);
+}
+*/
 
 /**
  * @brief Iterates on grid to generate mandelbrot set points

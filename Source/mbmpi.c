@@ -1,7 +1,7 @@
 #include <mbmpi.h>
 
 #include "args.h"
-#include "kernel.cuh"
+#include "kernel.h"
 #include "bitmap.h"
 #include "mandelbrot.h"
 

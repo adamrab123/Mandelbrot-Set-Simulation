@@ -47,44 +47,6 @@ void _complex_to_bitmap(long double real, long double imag, int *x, int *y) {
     *y = round((imag - y_min) / step_size);
 }
 
-
-// /**
-//  * @brief Writes the grid to the image
-//  * 
-//  * @param grid the grid representing the points to be plotted
-//  * @param grid_height the height of the grid
-//  * @param offset the y offset for each rank
-//  */
-// // void write_grid(unsigned char ** grid, int grid_height, int offset){
-// void write_grid(MB_Point ** grid, int grid_height, int offset){
-//     int my_rank, num_ranks;
-//     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-//     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
-    
-//     int bitmap_x, bitmap_y;
-
-//     if(grid_height % num_ranks == 0 || my_rank != num_ranks - 1){
-//         for (int i = 0; i < grid_width; i++){
-//             for(int j = 0; j < (grid_height / num_ranks); j++){
-//                 MB_Point point = grid[i][offset + j]
-//                 Rgb color = MB_color_of(&point, DIRECT_RGB);
-//                 _complex_to_bitmap(creal(point.c), imag(point.c), &bitmap_x, &bitmap_y);
-//                 Bitmap_write_pixel_parallel(bitmap, color, bitmap_x, bitmap_y);
-//             }
-//         }
-//     }
-//     else{
-//         for (int i = 0; i < grid_width; i++){
-//             for(int j = 0; j < (grid_height % num_ranks); j++){
-//                 MB_Point point = grid[i][offset + j]
-//                 Rgb color = MB_color_of(&point, DIRECT_RGB);
-//                 _complex_to_bitmap(creal(point.c), imag(point.c), &bitmap_x, &bitmap_y);
-//                 Bitmap_write_pixel_parallel(bitmap, color, bitmap_x, bitmap_y);
-//             }
-//         }
-//     }
-// }
-
 /**
  * @brief Allocates the grid of size @p grid_width by @p grid_height using cudaMallocManaged
  * 
@@ -98,25 +60,12 @@ Rgb ** allocate_grid(int grid_width, int grid_height){
     Rgb ** grid = NULL;
 
     // allocate rows
-    // int error = cudaMallocManaged( & grid, grid_width * sizeof(unsigned char *)); 
-    int error = cudaMallocManaged( & grid, grid_width * sizeof(Rgb *)); // Changed this to MB_POINT
+    grid = calloc(grid_width, sizeof(Rgb *)); 
 
-    // check if the allocation yielded an error
-    if(error != cudaSuccess){
-        printf("Error received with error %d!\n", error);
-        exit(EXIT_FAILURE);
-    }   
 
     // allocate columns
     for (int i = 0; i < grid_width; i++){
-        // error = cudaMallocManaged( & grid[i], grid_height * sizeof(unsigned char));
-        error = cudaMallocManaged( & grid[i], grid_height * sizeof(Rgb)); // Changed this to MB_POINT
-        if(error != cudaSuccess){
-            printf("Error received with error %d!\n", error);
-            exit(EXIT_FAILURE);
-        }
-        // Initialize grid to 0
-        // cudaMemset(grid[i], 0, grid_height);
+        grid[i] = calloc(grid_height, sizeof(Rgb)); 
     }
 
     return grid;

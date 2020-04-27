@@ -1,4 +1,4 @@
-all: $(wildcard Source/*.c) $(wildcard Source/*.cu) $(wildcard Source/*.h) $(wildcard Source/*.cuh)
+all: $(wildcard Source/*.c) $(wildcard Source/*.cu) $(wildcard Source/*.h) 
         # Build c/mpi files to one object file.
 		mpicc -g -I Source/Include Source/*.c -o Build/mpi.o
         # Build cuda files to one object file.

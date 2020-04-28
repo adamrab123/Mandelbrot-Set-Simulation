@@ -1,21 +1,20 @@
 #include <mbmpi.h>
 
 #include "args.h"
-#include "kernel.cuh"
 #include "bitmap.h"
+#include "mandelbrot.h"
+
+// Cuda functions
+extern void cuda_init(int my_rank);
+extern void launch_mandelbrot_kernel(Rgb ** grid, int grid_width, int grid_height, int grid_offset_y, int iterations, int block_size);
 
 int _get_offset(int grid_height);
+Rgb ** allocate_grid(int grid_width, int grid_height);
 
 /**
  * @brief Starts the kernel with for each rank and assigns each rank a portion of the grid
  * 
- * @param argc number of arguements
- * @param argv the arguements
- * @param dim_width the size of the x-axis of the grid
- * @param dim_height the size of the y-axis of the grid
- * @param step the step size increments of the grid
- * @param num_iterations number of iterations per point
- * @param block_size number of threads per block
+ * @param args the command line arguements
  */
 void start_mpi(const Arguments *args) {
     MPI_Init(NULL, NULL);
@@ -27,24 +26,47 @@ void start_mpi(const Arguments *args) {
     int grid_width = (args->x_max - args->x_min) / args->step_size;
     int grid_height = (args->y_max - args->y_min) / args->step_size;
 
+    Rgb ** grid = allocate_grid(grid_width, grid_height);
+
     Bitmap *bitmap = Bitmap_init(grid_width, grid_height, args->output_file, PARALLEL);
 
     int grid_offset_y = _get_offset(grid_height);
 
-    launch_mandelbrot_kernel(bitmap, grid_width, grid_height, grid_offset_y, args->iterations, args->block_size);
+    launch_mandelbrot_kernel(grid, grid_width, grid_height, grid_offset_y, args->iterations, args->block_size);
     MPI_Barrier(MPI_COMM_WORLD);
+
+    // write_grid(grid, grid_height, grid_offset_y)
 
     MPI_Finalize();
 }
 
 /**
+ * @brief Allocates the grid of size @p grid_width by @p grid_height using cudaMallocManaged
+ * 
+ * @param grid_width the width of the grid
+ * @param grid_height the height of the grid
+ * 
+ * @return grid
+ */
+// unsigned char ** allocate_grid(int grid_width, int grid_height){
+Rgb ** allocate_grid(int grid_width, int grid_height){
+    Rgb ** grid = NULL;
+
+    // allocate rows
+    grid = calloc(grid_width, sizeof(Rgb *)); 
+
+    // allocate columns
+    for (int i = 0; i < grid_width; i++){
+        grid[i] = calloc(grid_height, sizeof(Rgb)); 
+    }
+
+    return grid;
+}
+
+/**
  * @brief Initialize variables and assign portion of grid to the current rank
  * 
- * @param dim_width the size of the x-axis of the grid
- * @param dim_height the size of the y-axis of the grid
- * @param step the step size increments of the grid
- * @param my_rank the current rank
- * @param num_ranks the total number of ranks
+ * @param grid_height
  */
 int _get_offset(int grid_height) {
     int my_rank, num_ranks;

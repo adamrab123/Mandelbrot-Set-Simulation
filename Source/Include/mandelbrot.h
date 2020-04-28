@@ -4,11 +4,16 @@
 #include<stdbool.h>
 #include<complex.h>
 
-#include "bitmap.h"
 
 // BEGIN TYPEDEFS
 
 typedef long double complex MB_Complex;
+
+typedef struct {
+    unsigned char red;
+    unsigned char green;
+    unsigned char blue;
+} Rgb;
 
 /**
  * @brief Contains information about a point c that has undergone some number of Mandelbrot set iterations.

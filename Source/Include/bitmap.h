@@ -4,14 +4,7 @@
 #include <mpi.h>
 #include <stdio.h>
 
-/**
- * @brief Represents an RGB color with red, green, and blue integer fields on [0, 255].
- */
-typedef struct {
-    unsigned char blue;
-    unsigned char green;
-    unsigned char red;
-} Rgb;
+#include "mandelbrot.h"
 
 /**
  * @brief Bitmap object containing file pointers and useful info 
@@ -71,5 +64,15 @@ void Bitmap_write_pixel_serial(Bitmap *self, Rgb pixel, int x, int y);
  * @param y Pixel 'Y' coordinate (offest for image plane)
  */
 void Bitmap_write_pixel_parallel(Bitmap *self, Rgb pixel, int x, int y);
+
+/**
+ * @brief Writes passed pixel rows to the output file using parallel MPI methods
+ * 
+ * @param self Bitmap object
+ * @param pixels Array of pixel rows
+ * @param num_rows Number of pixel rows
+ * @param start_row 'Y' coordinate of the starting row (offset for image plane)
+ */
+void Bitmap_write_rows_parallel(Bitmap *self, Rgb **pixels, int num_rows, int start_row);
 
 #endif

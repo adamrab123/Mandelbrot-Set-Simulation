@@ -1,6 +1,6 @@
 # Mandelbrot Set Simulation
 
-- Overleaf document: https://www.overleaf.com/4578711964kfrnpsghcgsg
+- Overleaf document: https://www.overleaf.com/2373935774gwqzxqfbdqkf
 
 ## Floating Point Arithmetic
 

@@ -1,14 +1,29 @@
+#include<stdio.h>
 #include<stdlib.h>
 #include<complex.h>
 #include<stdbool.h>
 #include<math.h>
 
+#include<assert.h>
+
 #include "mandelbrot.h"
 
-Rgb _MB_rgb_color(const MB_Point *point);
-Rgb _MB_hsv_to_rgb(int hue, double saturation, double value);
-Rgb _MB_hsv_color(const MB_Point *point);
-double _MB_normalized_iterations(const MB_Point *point);
+void _MandelbrotPoint_set_norm_iters(MandelbrotPoint *self, const Mandelbrot *point);
+void _check_flags(const char *file, int line);
+
+Mandelbrot *Mandelbrot_init(long long max_iters, mpfr_prec_t prec, mpfr_rnd_t rnd) {
+    Mandelbrot *self = malloc(sizeof(Mandelbrot));
+
+    self->max_iters = max_iters;
+    self->prec = prec;
+    self->rnd = rnd;
+
+    return self;
+}
+
+void Mandelbrot_free(Mandelbrot *self) {
+    free(self);
+}
 
 /**
  * @brief Performs @p iterations number of mandelbrot set iterations on the imaginary number c given by @p c_real and @c
@@ -20,179 +35,59 @@ double _MB_normalized_iterations(const MB_Point *point);
  *
  * @return An @c MB_Point instance containing information about the resulting iterations.
  */
-MB_Point MB_iterate_mandelbrot(long double c_real, long double c_img, int iterations) {
-    MB_Complex c = c_real + c_img * I;
-    MB_Complex z = 0;
-    MB_Complex z_next = 0;
+MandelbrotPoint *Mandelbrot_iterate(Mandelbrot *self, mpc_t c) {
+    mpc_t z;
+    mpc_init2(z, self->prec);
+    mpc_set_ui(z, 0, self->rnd);
+
+    mpfr_t z_abs;
+    mpfr_init2(z_abs, self->prec);
+    mpfr_set_ui(z_abs, 0, self->rnd);
 
     bool diverged = false;
-    int escape_radius = 2;
+    unsigned int escape_radius = 2;
 
     int iters_performed = 0;
-    while (iters_performed < iterations && !diverged) {
-        z_next = cpowl(z, 2) + c;
-        z = z_next;
+    while (iters_performed < self->max_iters && !diverged) {
+        // Compute z = z^2 + c.
+        mpc_sqr(z, z, self->rnd);
+        mpc_add(z, z, c, self->rnd);
 
-        // cabsl(z) is the distance from z to the origin.
-        diverged = cabsl(z) > escape_radius;
+        // Absolute value of z is its distance from the origin.
+        mpc_abs(z_abs, z, self->rnd);
+
+        diverged = (mpfr_cmp_ui(z_abs, escape_radius) > 0);
+
+        // Check for errors in this calculation.
+        _check_flags(__FILE__, __LINE__);
 
         iters_performed++;
     }
 
-    MB_Point info;
-    info.z_final = z;
-    info.iters_performed = iters_performed;
-    info.max_iters = iterations;
-    info.c = c;
+    // Return point information to the user.
+    MandelbrotPoint *point = malloc(sizeof(MandelbrotPoint));
 
-    return info;
+    point->iters_performed = iters_performed;
+
+    mpc_init2(point->c, self->prec);
+    mpc_set(point->c, c, self->rnd);
+
+    mpc_init2(point->z_final, self->prec);
+    mpc_set(point->z_final, z, self->rnd);
+
+    point->diverged = diverged;
+
+    // Uses point->z_final anbd point->diverged.
+    _MandelbrotPoint_set_norm_iters(point, self);
+
+    return point;
 }
 
-/**
- * @brief Returns an RGB color representation of @p point, using the specified conversion method to generate the color.
- * 
- * @param point The point whose Mandelbrot set information will be converted into a color.
- * @param conversion The method to generate the color.
- *
- * @return An RGB color representation of @p point using its Mandelbrot set information.
- */
-Rgb MB_color_of(const MB_Point *point, MB_ColorMap conversion) {
-    Rgb color;
-
-    if (conversion == HSV_TO_RGB) {
-        color = _MB_hsv_color(point);
-    }
-    else if (conversion == DIRECT_RGB) {
-        color = _MB_rgb_color(point);
-    }
-
-    return color;
-}
-
-/**
- * @brief Generates an RGB color directly from an @c MB_Point.
- *
- * As the number of performed iterations on a point increases, this should produce a color gradient from white to
- * yellow to red to black.
- *
- * @param point The Mandelbrot set information for a point that will be used to calculate its color.
- *
- * @return An RGB representation of @p point.
- */
-Rgb _MB_rgb_color(const MB_Point *point) {
-    // Produces number on range (0, 3).
-    double color_fraction = _MB_normalized_iterations(point) * 3;
-
-    Rgb color;
-
-    if (color_fraction < 1) {
-        color.red = 255;
-        color.green = 255;
-        color.blue = (1 - color_fraction) * 255;
-    }
-    else if (color_fraction >= 1 && color_fraction < 2) {
-        color.red = 255;
-        color.green = (2 - color_fraction) * 255;
-        color.blue = 0;
-    }
-    else {
-        // color_fraction on [2, 3).
-        color.red = (3 - color_fraction) * 255;
-        color.green = 0;
-        color.blue = 0;
-    }
-
-    return color;
-}
-
-/**
- * @brief Generates an HSV color from @p point, and then converts it to an RGB color.
- *
- * Sets the hue to be a percentage of its maximum possible value, determined by the normalized iteration count.
- * Sets the saturation as always one.
- * Sets the value as 1 if @p point diverged, 0 otherwise.
- *
- * @param point The Mandelbrot set information for a point that will be used to calculate its color.
- *
- * @return An RGB representation of @p point converted from an HSV value.
- */
-Rgb _MB_hsv_color(const MB_Point *point) {
-    double color_percent = _MB_normalized_iterations(point);
-
-    int hue = floor(color_percent * 360);
-    int saturation = 1;
-    int value = 1;
-
-    // If the point did not diverge after all iterations finished, it is in the set.
-    // Color it black.
-    if (point->iters_performed == point->max_iters) {
-        value = 0;
-    }
-
-    return _MB_hsv_to_rgb(hue, saturation, value);
-}
-
-/**
- * @brief Converts an HSV color to an RGB color.
- * 
- * @param hue The hue parameter of the color to convert, on the range [0, 359].
- * @param saturation The saturation parameter of the color to convert, on the range [0, 1].
- * @param value The value (or brightness) parameter of the color to convert, on the range [0, 1].
- *
- * @return An RGB color representation that is identical to the provided HSV color representation.
- */
-Rgb _MB_hsv_to_rgb(int hue, double saturation, double value) {
-    double c = value * saturation;
-    double x = c * (1 - abs(hue / 60 % 2 - 1));
-    double m = value - c;
-
-    // c, x, 0 become c1, c2, c3.
-    int c1 = (c + m) * 255;
-    int c2 = (x + m) * 255;
-    int c3 = (m) * 255;
-
-    Rgb color;
-
-    int norm_hue = hue / 60;
-
-    if (norm_hue == 0) {
-        // Red hue.
-        color.red = c1;
-        color.green = c2;
-        color.blue = c3;
-    }
-    else if (norm_hue == 1) {
-        // Yellow hue.
-        color.red = c2;
-        color.green = c1;
-        color.blue = c3;
-    }
-    else if (norm_hue == 2) {
-        // Green hue.
-        color.red = c3;
-        color.green = c1;
-        color.blue = c2;
-    }
-    else if (norm_hue == 3) {
-        // Cyan hue.
-        color.red = c3;
-        color.green = c2;
-        color.blue = c1;
-    }
-    else if (norm_hue == 4) {
-        // Blue hue.
-        color.red = c2;
-        color.green = c3;
-        color.blue = c1;
-    }
-    else if (norm_hue == 5) {
-        // Magenta hue.
-        color.red = c1;
-        color.green = c3;
-        color.blue = c2;
-    }
-
-    return color;
+// Free MPFR data contained in the point.
+void MandelbrotPoint_free(MandelbrotPoint *point) {
+    mpc_clear(point->z_final);
+    mpc_clear(point->c);
+    free(point);
 }
 
 /**
@@ -206,20 +101,69 @@ Rgb _MB_hsv_to_rgb(int hue, double saturation, double value) {
  *
  * @return A value on the range (0, 1).
  */
-double _MB_normalized_iterations(const MB_Point *point) {
-    // Smooth is on (0, max_iter).
-    int smooth = point->iters_performed + 1 - logl(logl(cabsl(point->z_final))) / logl(2);
-    // Normalize smooth to be on (0, 1).
-    return (double)smooth / point->max_iters;
+void _MandelbrotPoint_set_norm_iters(MandelbrotPoint *self, const Mandelbrot *mb) {
+    mpfr_init2(self->norm_iters, mb->prec);
+
+    if (!self->diverged) {
+        // Points in the set are given the value 1.
+        // They may cause NaN results if run through the log calculation below.
+        mpfr_set_ui(self->norm_iters, 1, mb->prec);
+    }
+    else {
+        // Compute the following to get a number on teh range (0, max_iter), then normalize to be on (0, 1).
+        // iters_performed + 1 - log(log(|z_final|)) / log(2)
+
+        mpfr_set_ui(self->norm_iters, 0, mb->rnd);
+
+        mpfr_t log_of_2;
+        mpfr_init2(log_of_2, mb->prec);
+        // NOTE: This uses natural log but I think that is OK.
+        mpfr_log_ui(log_of_2, 2, mb->rnd);
+
+        // Compute -log(log(|z_final|)) / log(2).
+        mpc_abs(self->norm_iters, self->z_final, mb->rnd);
+        mpfr_log(self->norm_iters, self->norm_iters, mb->rnd);
+        mpfr_log(self->norm_iters, self->norm_iters, mb->rnd); // THIS LINE CAUSES NAN!
+        mpfr_div(self->norm_iters, self->norm_iters, log_of_2, mb->rnd);
+        mpfr_neg(self->norm_iters, self->norm_iters, mb->rnd);
+
+        // Add iters_performed + 1 to the result above.
+        mpfr_add_ui(self->norm_iters, self->norm_iters, self->iters_performed + 1, mb->rnd);
+
+        // Normalize smooth to be on (0, 1).
+        mpfr_div_ui(self->norm_iters, self->norm_iters, mb->max_iters, mb->rnd);
+
+        // mpfr_printf("Norm iters: %Rf\n", self->norm_iters);
+
+        _check_flags(__FILE__, __LINE__);
+    }
 }
 
-/**
- * @brief Determines whether @p point diverged after its maximum number of iterations of the mandelbrot set calculation.
- *
- * @param point The point to determine divergence for.
- *
- * @return @c true if @p point diverged, @c false otherwise.
- */
-bool MB_diverged(const MB_Point *point) {
-    return point->iters_performed < point->max_iters;
+void _check_flags(const char *file, int line) {
+    if (mpfr_flags_test(MPFR_FLAGS_OVERFLOW)) {
+        fprintf(stderr, "%s: %d Overflow in computation\n", file, line);
+        exit(1);
+    }
+    else if (mpfr_flags_test(MPFR_FLAGS_UNDERFLOW)) {
+        fprintf(stderr, "%s: %d Underflow in computation\n", file, line);
+        exit(1);
+    }
+    else if (mpfr_flags_test(MPFR_FLAGS_NAN)) {
+        fprintf(stderr, "%s, %d NaN result in computation\n", file, line);
+        exit(1);
+    }
+    else if (mpfr_flags_test(MPFR_FLAGS_DIVBY0)) {
+        fprintf(stderr, "%s, %d Divide by 0 in computation\n", file, line);
+        exit(1);
+    }
+    else if (mpfr_flags_test(MPFR_FLAGS_ERANGE)) {
+        // Cuased by a function not returning an mpfr number having an invalid result, like NaN.
+        fprintf(stderr, "%s, %d Erange result in computation\n", file, line);
+        exit(1);
+    }
+    // This is set whenever rounding occurs. Do not treat this as an error.
+    // else if (mpfr_flags_test(MPFR_FLAGS_INEXACT)) {
+    //     fprintf(stderr, "%s, %d Inexact result in computation\n", file, line);
+    //     exit(1);
+    // }
 }

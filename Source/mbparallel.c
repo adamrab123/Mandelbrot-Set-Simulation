@@ -1,7 +1,6 @@
 #include "mbparallel.h"
 #include "args.h"
 #include "bitmap.h"
-#include "mandelbrot.h"
 
 // Cuda functions
 extern void cuda_init(int my_rank);

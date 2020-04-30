@@ -1,3 +1,6 @@
+LIB = lib
+INCLUDE = 
+
 parallel: $(wildcard Source/*.c) $(wildcard Source/*.cu) $(wildcard Source/*.h) 
         # Build c/mpi files to one object file.
 		mpicc -D PARALLEL -Wall -Werror -lmpfr -lmpc -g -I Source/Include Source/bitmap.c -c -o Build/bitmap.o
@@ -17,5 +20,8 @@ serial: $(wildcard Source/*.c) $(wildcard Source/Include*.h)
 			Source/args.c Source/mandelbrot.c Source/mbserial.c -o Build/mandelbrot
 
 aimos-serial: $(wildcard Source/*.c) $(wildcard Source/Include*.h)
-		gcc -std=c99 -Wall -Werror -O2 -lm -I Source/Include -I ~/include ~/lib/libmpc.so ~/lib/libmpfr.so Source/bitmap.c Source/colormap.c Source/main.c \
+		gcc -std=c99 -Wall -Werror -O2 -lm -I Source/Include -I Lib/Include \
+			-L Lib \
+			-l mpfr -l mpc \
+			Source/bitmap.c Source/colormap.c Source/main.c \
 			Source/args.c Source/mandelbrot.c Source/mbserial.c -o Build/mandelbrot

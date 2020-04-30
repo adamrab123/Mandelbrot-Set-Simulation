@@ -1,4 +1,5 @@
 #include <mpfr.h>
+#include <mpc.h>
 #include <getopt.h>
 
 #include "args.h"
@@ -14,7 +15,7 @@ Args *Args_init(int argc, const char **argv) {
     // Round to nearest.
     self->rnd = MPFR_RNDN;
 
-    mpfr_inits2(self->prec, self->x_min, self->x_max, self->y_min, self->y_max, self->step_size);
+    mpfr_inits2(self->prec, self->x_min, self->x_max, self->y_min, self->y_max, self->step_size, NULL);
     mpfr_set_str(self->x_min, "-2.1", base, self->rnd);
     mpfr_set_str(self->x_max, "1", base, self->rnd);
     mpfr_set_str(self->y_min, "-1.5", base, self->rnd);
@@ -34,6 +35,41 @@ void Args_free(Args *self) {
     mpfr_clear(self->step_size);
 
     free(self);
+}
+
+// Calculate the width and height of the bitmap image based on the input parameters.
+void Args_bitmap_dims(const Args *self, int *width, int *height) {
+    mpfr_t temp;
+    mpfr_init2(temp, self->prec);
+
+    // Calculate width = (x_max - x_min) / step_size
+    mpfr_sub(temp, self->x_max, self->x_min, self->rnd);
+    mpfr_div(temp, temp, self->step_size, self->rnd);
+    *width = mpfr_get_ui(temp, self->rnd);
+
+    // Calculate height = (y_max - y_min) / step_size
+    mpfr_sub(temp, self->y_max, self->y_min, self->rnd);
+    mpfr_div(temp, temp, self->step_size, self->rnd);
+    *height = mpfr_get_ui(temp, self->rnd);
+
+    mpfr_clear(temp);
+}
+
+void Args_bitmap_to_complex(const Args *self, int x, int y, mpc_ptr c) {
+    mpc_init2(c, self->prec);
+
+    mpfr_t c_real;
+    mpfr_init_set_ui(c_real, x, self->rnd);
+    mpfr_mul(c_real, c_real, self->step_size, self->rnd);
+    mpfr_add(c_real, c_real, self->x_min, self->rnd);
+
+    mpfr_t c_imag;
+    mpfr_init_set_ui(c_imag, y, self->rnd);
+    mpfr_mul(c_imag, c_imag, self->step_size, self->rnd);
+    mpfr_add(c_imag, c_imag, self->y_min, self->rnd);
+
+    mpc_set_fr_fr(c, c_real, c_imag, self->rnd);
+    mpfr_clears(c_real, c_imag, NULL);
 }
 
 /**

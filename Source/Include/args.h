@@ -23,4 +23,6 @@ typedef struct {
 Args *Args_init(int argc, const char **argv);
 void Args_free(Args *self);
 
+void Args_bitmap_dims(const Args *self, int *width, int *height);
+
 #endif // ARGS_H

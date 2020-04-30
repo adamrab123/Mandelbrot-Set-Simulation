@@ -2,6 +2,7 @@
 #define ARGS_H
 
 #include <mpfr.h>
+#include <mpc.h>
 
 /**
  * @brief Contains information about the optional command 
@@ -23,6 +24,13 @@ typedef struct {
 Args *Args_init(int argc, const char **argv);
 void Args_free(Args *self);
 
+#ifdef PARALLEL
+__host__ __device__
+#endif
 void Args_bitmap_dims(const Args *self, int *width, int *height);
+#ifdef PARALLEL
+__host__ __device__
+#endif
+void Args_bitmap_to_complex(const Args *self, int x, int y, mpc_ptr c);
 
 #endif // ARGS_H

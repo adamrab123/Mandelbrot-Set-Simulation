@@ -8,17 +8,17 @@
 
 #include "mandelbrot.h"
 
-#ifdef __CUDACC__
+#ifdef PARALLEL
 __host__ __device__
 #endif
 void _MandelbrotPoint_set_norm_iters(MandelbrotPoint *self, const Mandelbrot *point);
 
-#ifdef __CUDACC__
+#ifdef PARALLEL
 __host__ __device__
 #endif
 void _check_flags(const char *file, int line);
 
-#ifdef __CUDACC__
+#ifdef PARALLEL
 __host__ __device__
 #endif
 Mandelbrot *Mandelbrot_init(long long max_iters, mpfr_prec_t prec, mpfr_rnd_t rnd) {
@@ -31,7 +31,7 @@ Mandelbrot *Mandelbrot_init(long long max_iters, mpfr_prec_t prec, mpfr_rnd_t rn
     return self;
 }
 
-#ifdef __CUDACC__
+#ifdef PARALLEL
 __host__ __device__
 #endif
 void Mandelbrot_free(Mandelbrot *self) {
@@ -48,7 +48,7 @@ void Mandelbrot_free(Mandelbrot *self) {
  *
  * @return An @c MB_Point instance containing information about the resulting iterations.
  */
-#ifdef __CUDACC__
+#ifdef PARALLEL
 __host__ __device__
 #endif
 MandelbrotPoint *Mandelbrot_iterate(Mandelbrot *self, mpc_t c) {
@@ -100,7 +100,7 @@ MandelbrotPoint *Mandelbrot_iterate(Mandelbrot *self, mpc_t c) {
 }
 
 // Free MPFR data contained in the point.
-#ifdef __CUDACC__
+#ifdef PARALLEL
 __host__ __device__
 #endif
 void MandelbrotPoint_free(MandelbrotPoint *point) {
@@ -120,7 +120,7 @@ void MandelbrotPoint_free(MandelbrotPoint *point) {
  *
  * @return A value on the range (0, 1).
  */
-#ifdef __CUDACC__
+#ifdef PARALLEL
 __host__ __device__
 #endif
 void _MandelbrotPoint_set_norm_iters(MandelbrotPoint *self, const Mandelbrot *mb) {
@@ -161,7 +161,7 @@ void _MandelbrotPoint_set_norm_iters(MandelbrotPoint *self, const Mandelbrot *mb
     }
 }
 
-#ifdef __CUDACC__
+#ifdef PARALLEL
 __host__ __device__
 #endif
 void _check_flags(const char *file, int line) {

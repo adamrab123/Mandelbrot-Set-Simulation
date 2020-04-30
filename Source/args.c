@@ -38,6 +38,9 @@ void Args_free(Args *self) {
 }
 
 // Calculate the width and height of the bitmap image based on the input parameters.
+#ifdef PARALLEL
+__host__ __device__
+#endif
 void Args_bitmap_dims(const Args *self, int *width, int *height) {
     mpfr_t temp;
     mpfr_init2(temp, self->prec);
@@ -55,6 +58,9 @@ void Args_bitmap_dims(const Args *self, int *width, int *height) {
     mpfr_clear(temp);
 }
 
+#ifdef PARALLEL
+__host__ __device__
+#endif
 void Args_bitmap_to_complex(const Args *self, int x, int y, mpc_ptr c) {
     mpc_init2(c, self->prec);
 

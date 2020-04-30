@@ -1,7 +1,6 @@
-#include <mbmpi.h>
+#include <mbparallel.h>
 
 #include "args.h"
-#include "colormap.h"
 #include "bitmap.h"
 #include "mandelbrot.h"
 

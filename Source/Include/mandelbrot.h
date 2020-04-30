@@ -6,11 +6,9 @@
 #include<mpfr.h>
 #include<mpc.h>
 
-#include "rgb.h"
-
 // BEGIN TYPEDEFS
 
-#ifdef __CUDACC__
+#ifdef PARALLEL
 __host__ __device__
 #endif
 typedef struct {
@@ -24,7 +22,7 @@ typedef struct {
  * 
  * Fields are named based on the Mandelbrot set formula z = z_prev^2 + c.
  */
-#ifdef __CUDACC__
+#ifdef PARALLEL
 __host__ __device__
 #endif
 typedef struct {
@@ -37,21 +35,21 @@ typedef struct {
 
 // END TYPEDEFS
 
-#ifdef __CUDACC__
+#ifdef PARALLEL
 __host__ __device__
 #endif
 Mandelbrot *Mandelbrot_init(long long max_iters, mpfr_prec_t prec, mpfr_rnd_t rnd);
-#ifdef __CUDACC__
+#ifdef PARALLEL
 __host__ __device__
 #endif
 void Mandelbrot_free(Mandelbrot *self);
 
-#ifdef __CUDACC__
+#ifdef PARALLEL
 __host__ __device__
 #endif
 MandelbrotPoint *Mandelbrot_iterate(Mandelbrot *self, mpc_t c);
 
-#ifdef __CUDACC__
+#ifdef PARALLEL
 __host__ __device__
 #endif
 void MandelbrotPoint_free(MandelbrotPoint *self);

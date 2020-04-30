@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "mandelbrot.h"
+#include "colormap.h"
 
 /**
  * @brief Bitmap object containing file pointers and useful info 

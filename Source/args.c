@@ -5,7 +5,7 @@
 #include "args.h"
 
 Args *Args_init(int argc, char **argv) {
-    Args *self = malloc(sizeof(Args));
+    Args *self = (Args *)malloc(sizeof(Args));
     self->x_min = -2.1;
     self->x_max = 1;
     self->y_min = -1.5;

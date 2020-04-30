@@ -89,7 +89,7 @@ void _MandelbrotPoint_set_norm_iters(MandelbrotPoint *self) {
         // iters_performed + 1 - log(log(|z_final|)) / log(2)
         double z_abs = MbComplex_abs(MbComplex_init(self->z_real, self->z_imag));
 
-        self->norm_iters = self->iters_performed + 1 - log(log(z_abs)) / log(2);
+        self->norm_iters = self->iters_performed + 1 - log(log(z_abs)) / log(2.0);
 
         // Normalize to be on (0, 1).
         self->norm_iters /= self->max_iters;

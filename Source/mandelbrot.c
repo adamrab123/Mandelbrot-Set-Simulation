@@ -28,7 +28,7 @@ __host__ __device__
 #endif
 MandelbrotPoint *Mandelbrot_iterate(double c_real, double c_image, long iterations) {
     bool diverged = false;
-    unsigned int escape_radius = 2;
+    int escape_radius = 2;
 
     MbComplex c = MbComplex_init(c_real, c_image);
     MbComplex z = MbComplex_init(0, 0);
@@ -37,10 +37,10 @@ MandelbrotPoint *Mandelbrot_iterate(double c_real, double c_image, long iteratio
     while (iters_performed < iterations && !diverged) {
         // Compute z = z^2 + c.
         MbComplex z_squared = MbComplex_mul(z, z);
-        MbComplex_assign(z, MbComplex_add(z_squared, c));
+        MbComplex_assign(&z, MbComplex_add(z_squared, c));
 
         // Absolute value of z is its distance from the origin.
-        diverged = (MbComplex_abs(z) > 0);
+        diverged = (MbComplex_abs(z) > escape_radius);
 
         iters_performed++;
     }
@@ -49,6 +49,7 @@ MandelbrotPoint *Mandelbrot_iterate(double c_real, double c_image, long iteratio
     MandelbrotPoint *point = (MandelbrotPoint *)malloc(sizeof(MandelbrotPoint));
 
     point->iters_performed = iters_performed;
+    point->max_iters = iterations;
 
     point->c_real = c.real;
     point->c_imag = c.imag;

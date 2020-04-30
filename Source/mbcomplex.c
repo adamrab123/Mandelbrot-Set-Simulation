@@ -38,13 +38,13 @@ MbComplex MbComplex_mul(MbComplex num1, MbComplex num2) {
 __host__ __device__
 #endif
 Part MbComplex_abs(MbComplex num) {
-    return sqrtf(pow(num.real, 2) + pow(num.imag, 2));
+    return sqrt(pow(num.real, 2) + pow(num.imag, 2));
 }
 
 #ifdef __CUDACC__
 __host__ __device__
 #endif
-void MbComplex_assign(MbComplex lvalue, MbComplex rvalue) {
-    lvalue.real = rvalue.real;
-    lvalue.imag = rvalue.imag;
+void MbComplex_assign(MbComplex *lvalue, MbComplex rvalue) {
+    lvalue->real = rvalue.real;
+    lvalue->imag = rvalue.imag;
 }

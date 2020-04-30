@@ -1,5 +1,4 @@
-#include <mpfr.h>
-#include <mpc.h>
+#include <stdlib.h>
 
 #include "mbserial.h"
 #include "bitmap.h"
@@ -27,7 +26,7 @@ void compute_mandelbrot_serial(const Args *args) {
             }
 
             Bitmap_write_pixel(bitmap, color, x, y);
-            MandelbrotPoint_free(point);
+            free(point);
         }
     }
 

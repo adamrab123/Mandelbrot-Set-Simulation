@@ -31,7 +31,7 @@ __global__ void _mandelbrot_kernel(Rgb **grid, long grid_width, long grid_height
 
         grid[grid_x][grid_y] = ColorMap_hsv_based(point->norm_iters);
 
-        MandelbrotPoint_free(point);
+        free(point);
     }
 }
 

@@ -27,6 +27,6 @@ Part MbComplex_abs(MbComplex num);
 #ifdef __CUDACC__
 __host__ __device__
 #endif
-void MbComplex_assign(MbComplex lvalue, MbComplex rvalue);
+void MbComplex_assign(MbComplex *lvalue, MbComplex rvalue);
 
 #endif

@@ -69,26 +69,8 @@ Bitmap *Bitmap_init(int width, int height, const char *file_name) {
         memset(temp_data, 255, self->width * BYTES_PER_PIXEL); // blank (white) image
 
         for (int i = 0; i < self->height; i++) {
-            // From parallel version:
-            // MPI_File_write_at(  *self->parallel_file, 
-            //                     _compute_pixel_offset(self, 0, i), 
-            //                     temp_data, 
-            //                     self->width * BYTES_PER_PIXEL, 
-            //                     MPI_UNSIGNED_CHAR,
-            //                     NULL);
-
-            // MPI_File_write_at(  *self->parallel_file,
-            //                     _compute_pixel_offset(self, self->width, i),
-            //                     PADDING,
-            //                     self->_padding_size,
-            //                     MPI_UNSIGNED_CHAR,
-            //                     NULL);
-
-            // from serial version:
-            // fwrite(temp_data, BYTES_PER_PIXEL, self->width, self->file);
-            // fwrite(PADDING, 1, self->_padding_size, self->file);
-
-            // _write_at(self, temp_data, BYTES_PER_PIXEL);
+            _write_at_pixel(self, 0, i, temp_data, BYTES_PER_PIXEL * self->width);
+            _write_at_pixel(self, self->width, i, PADDING, self->_padding_size);
         }
     }
 
@@ -132,7 +114,7 @@ void Bitmap_write_pixel(Bitmap *self, Rgb pixel, long x, long y) {
  * @param num_rows Number of pixel rows
  * @param start_row 'Y' coordinate of the starting row (offset for image plane)
  */
-void Bitmap_write_rows(Bitmap *self, Rgb **pixels, int num_rows, int start_row) {
+void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows) {
     // compute padding needed and size of array to be written
     long pixels_data_length = num_rows * ((self->width * BYTES_PER_PIXEL) + self->_padding_size);
     unsigned char pixels_data[pixels_data_length];
@@ -175,8 +157,9 @@ int _write_at_pixel(const Bitmap *self, long x, long y, unsigned char *data, lon
 }
 
 void _write_at(const Bitmap *self, long offset, unsigned char *data, long len_data) {
+    // Both parallel and serial versions seek from the beginning of the file every time.
     #ifdef PARALLEL
-        MPI_File_write_at(*self->parallel_file,
+        MPI_File_write_at(self->_file,
                             offset,
                             data,
                             len_data,

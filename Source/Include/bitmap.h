@@ -67,6 +67,6 @@ void Bitmap_write_pixel(Bitmap *self, Rgb pixel, long x, long y) {
  * @param num_rows Number of pixel rows
  * @param start_row 'Y' coordinate of the starting row (offset for image plane)
  */
-void Bitmap_write_rows(Bitmap *self, Rgb **pixels, int num_rows, int start_row);
+void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows);
 
 #endif

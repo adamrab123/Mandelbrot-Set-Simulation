@@ -6,7 +6,7 @@
 
 // Cuda functions
 extern void cuda_init(int my_rank);
-extern void launch_mandelbrot_kernel(Rgb **grid, const Mandelbrot *mb, int grid_width, int grid_height, int grid_offset_y, int block_size);
+extern void launch_mandelbrot_kernel(Rgb **grid, int grid_width, int grid_height, int grid_offset_y, int block_size);
 
 int _get_y_offset(int grid_height);
 Rgb **_allocate_grid(int grid_width, int grid_height);
@@ -28,14 +28,14 @@ void compute_mandelbrot_parallel(const Args *args) {
 
     Rgb **grid = _allocate_grid(grid_width, grid_height);
 
-    Bitmap *bitmap = Bitmap_init(grid_width, grid_height, args->output_file, PARALLEL);
+    Bitmap *bitmap = Bitmap_init(grid_width, grid_height, args->output_file);
 
     int grid_offset_y = _get_y_offset(grid_height);
 
     launch_mandelbrot_kernel(grid, grid_width, grid_height, grid_offset_y, args);
     MPI_Barrier(MPI_COMM_WORLD);
 
-    // write_grid(grid, grid_height, grid_offset_y)
+    Bitmap_write_rows(bitmap, grid, grid_offset_y, grid_height);
 
     MPI_Finalize();
 }

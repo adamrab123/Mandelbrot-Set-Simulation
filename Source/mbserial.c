@@ -31,7 +31,7 @@ void compute_mandelbrot_serial(const Args *args) {
                 color = RGB_BLACK;
             }
 
-            Bitmap_write_pixel_serial(bitmap, color, x, y);
+            Bitmap_write_pixel(bitmap, color, x, y);
             MandelbrotPoint_free(point);
         }
     }

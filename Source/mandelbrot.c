@@ -16,11 +16,6 @@ void _MandelbrotPoint_set_norm_iters(MandelbrotPoint *self, const Mandelbrot *po
 #ifdef __CUDACC__
 __host__ __device__
 #endif
-void _check_flags(const char *file, int line);
-
-#ifdef __CUDACC__
-__host__ __device__
-#endif
 Mandelbrot *Mandelbrot_init(long long max_iters, mpfr_prec_t prec, mpfr_rnd_t rnd) {
     Mandelbrot *self = (Mandelbrot *)malloc(sizeof(Mandelbrot));
 
@@ -123,7 +118,7 @@ void MandelbrotPoint_free(MandelbrotPoint *point) {
 #ifdef __CUDACC__
 __host__ __device__
 #endif
-void _MandelbrotPoint_set_norm_iters(MandelbrotPoint *self, const Mandelbrot *mb) {
+void _MandelbrotPoint_set_norm_iters(MandelbrotPoint *self, ) {
     mpfr_init2(self->norm_iters, mb->prec);
 
     if (!self->diverged) {
@@ -159,36 +154,4 @@ void _MandelbrotPoint_set_norm_iters(MandelbrotPoint *self, const Mandelbrot *mb
 
         _check_flags(__FILE__, __LINE__);
     }
-}
-
-#ifdef __CUDACC__
-__host__ __device__
-#endif
-void _check_flags(const char *file, int line) {
-    if (mpfr_flags_test(MPFR_FLAGS_OVERFLOW)) {
-        fprintf(stderr, "%s: %d Overflow in computation\n", file, line);
-        exit(1);
-    }
-    else if (mpfr_flags_test(MPFR_FLAGS_UNDERFLOW)) {
-        fprintf(stderr, "%s: %d Underflow in computation\n", file, line);
-        exit(1);
-    }
-    else if (mpfr_flags_test(MPFR_FLAGS_NAN)) {
-        fprintf(stderr, "%s, %d NaN result in computation\n", file, line);
-        exit(1);
-    }
-    else if (mpfr_flags_test(MPFR_FLAGS_DIVBY0)) {
-        fprintf(stderr, "%s, %d Divide by 0 in computation\n", file, line);
-        exit(1);
-    }
-    else if (mpfr_flags_test(MPFR_FLAGS_ERANGE)) {
-        // Cuased by a function not returning an mpfr number having an invalid result, like NaN.
-        fprintf(stderr, "%s, %d Erange result in computation\n", file, line);
-        exit(1);
-    }
-    // This is set whenever rounding occurs. Do not treat this as an error.
-    // else if (mpfr_flags_test(MPFR_FLAGS_INEXACT)) {
-    //     fprintf(stderr, "%s, %d Inexact result in computation\n", file, line);
-    //     exit(1);
-    // }
 }

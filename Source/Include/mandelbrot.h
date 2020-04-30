@@ -1,19 +1,19 @@
 #ifndef MANDELBROT_H
 #define MANDELBROT_H
 
+#include<stdarg.h>
 #include<stdbool.h>
-#include<complex.h>
-
+#include <gmp.h>
+#include<mpfr.h>
+#include<mpc.h>
 
 // BEGIN TYPEDEFS
 
-typedef long double complex MB_Complex;
-
 typedef struct {
-    unsigned char red;
-    unsigned char green;
-    unsigned char blue;
-} Rgb;
+    long long max_iters;
+    mpfr_prec_t prec;
+    mpfr_rnd_t rnd;
+} Mandelbrot;
 
 /**
  * @brief Contains information about a point c that has undergone some number of Mandelbrot set iterations.
@@ -21,29 +21,32 @@ typedef struct {
  * Fields are named based on the Mandelbrot set formula z = z_prev^2 + c.
  */
 typedef struct {
-    MB_Complex c; /** The imaginary number whose Mandelbrot info is contained in this struct. */
     int iters_performed; /** The number of Mandelbrot iterations performed on @c c. */
-    int max_iters; /** The maximum number of iterations that could have been performed on @c c. */
-    MB_Complex z_final; /** The value of z after @c iters_performed iterations of @c c */
-} MB_Point;
-
-
-/**
- * @brief Represents conversion from an @c MB_Point to an @c Rgb color that can be passed to @c MB_color_of.
- */
-enum MB_ColorMap {
-    HSV_TO_RGB, /** Uses a normalized iteration count to generate an HSV color, and converts this to an RGB color.  */
-    DIRECT_RGB /** Converts a normalized iteration count directly to an RGB color. */
-};
-
-typedef enum MB_ColorMap MB_ColorMap;
+    mpc_t c; /** The imaginary number whose Mandelbrot info is contained in this struct. */
+    mpc_t z_final; /** The value of z after @c iters_performed iterations of @c c */
+    bool diverged;
+    mpfr_t norm_iters;
+} MandelbrotPoint;
 
 // END TYPEDEFS
 
-MB_Point MB_iterate_mandelbrot(long double c_real, long double c_img, int iterations);
+#ifdef __CUDACC__
+__host__ __device__
+#endif
+Mandelbrot *Mandelbrot_init(long long max_iters, mpfr_prec_t prec, mpfr_rnd_t rnd);
+#ifdef __CUDACC__
+__host__ __device__
+#endif
+void Mandelbrot_free(Mandelbrot *self);
 
-Rgb MB_color_of(const MB_Point *point, MB_ColorMap conversion);
+#ifdef __CUDACC__
+__host__ __device__
+#endif
+MandelbrotPoint *Mandelbrot_iterate(Mandelbrot *self, mpc_t c);
 
-bool MB_diverged(const MB_Point *point);
+#ifdef __CUDACC__
+__host__ __device__
+#endif
+void MandelbrotPoint_free(MandelbrotPoint *self);
 
 #endif // MANDELBROT_H

@@ -5,35 +5,20 @@
 #include<string.h>
 #include<cuda.h>
 #include<cuda_runtime.h>
-#include<complex.h>
 
 #include "mandelbrot.h"
 #include "args.h"
-
-// Used for bitmap to/from complex conversions.
-long double step_size;
-long double x_min, y_min;
-
-void _bitmap_to_complex(int x, int y, long double *real, long double *imag) {
-    *real = x * step_size + x_min;
-    *imag = y * step_size + y_min;
-}
-
-/*
-void _complex_to_bitmap(long double real, long double imag, int *x, int *y) {
-    *x = round((real - x_min) / step_size);
-    *y = round((imag - y_min) / step_size);
-}
-*/
+#include "colormap.h"
 
 /**
  * @brief Iterates on grid to generate mandelbrot set points
  * 
  * @param grid the grid
  */
-// __global__ void _mandelbrot_kernel(unsigned char ** grid, Bitmap *bitmap, int grid_width, int grid_height, int grid_offset_y, int iterations){
-__global__ void _mandelbrot_kernel(Rgb ** grid, int grid_width, int grid_height, int grid_offset_y, int iterations){
+__global__ void _mandelbrot_kernel(Rgb **grid, long grid_width, long grid_height, long grid_offset_y, const Args *args) {
+    Mandelbrot *mb = Mandelbrot_init(args->iterations, args->prec, args->rnd);
 
+    // Strided CUDA for loop.
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
 
@@ -41,13 +26,14 @@ __global__ void _mandelbrot_kernel(Rgb ** grid, int grid_width, int grid_height,
         int grid_x = index / grid_width;
         int grid_y = grid_offset_y + index % grid_height;
 
-        long double c_real, c_imag;
-        _bitmap_to_complex(grid_x, grid_y, &c_real, &c_imag);
+        mpc_t c;
+        Args_bitmap_to_complex(args, grid_x, grid_y, c);
 
-        MB_Point point = MB_iterate_mandelbrot(c_real, c_imag, iterations);
-        Rgb color = MB_color_of(&point, DIRECT_RGB);
+        MandelbrotPoint *point = Mandelbrot_iterate(mb, c);
 
-        grid[grid_x][grid_y] = color;
+        double norm_iters = 0;
+        //mpfr_get_d(point->norm_iters, args->rnd);
+        grid[grid_x][grid_y] = ColorMap_hsv_based(norm_iters);
     }
 }
 
@@ -58,12 +44,12 @@ __global__ void _mandelbrot_kernel(Rgb ** grid, int grid_width, int grid_height,
  * @param block_size number of threads per block
  */
 // extern "C" void launch_mandelbrot_kernel(unsigned char ** grid, Bitmap *bitmap, int grid_width, int grid_height, int grid_offset_y, int iterations, int block_size){
-extern "C" void launch_mandelbrot_kernel(Rgb ** grid, int grid_width, int grid_height, int grid_offset_y, int iterations, int block_size){
-    int N = grid_width * grid_height;
-    int num_blocks = (N + block_size - 1) / block_size;
+extern "C" void launch_mandelbrot_kernel(Rgb ** grid, long grid_width, long grid_height, long grid_offset_y, const Args *args){
+    long N = grid_width * grid_height;
+    int num_blocks = (N + args->block_size - 1) / args->block_size;
 
     // Launch kernel
-    _mandelbrot_kernel<<<num_blocks, block_size>>>(grid, grid_width, grid_height, grid_offset_y, args->iterations);
+    _mandelbrot_kernel<<<num_blocks, args->block_size>>>(grid, grid_width, grid_height, grid_offset_y, args);
     // Synchronize threads
     cudaDeviceSynchronize();
 }

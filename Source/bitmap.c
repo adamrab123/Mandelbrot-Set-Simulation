@@ -1,9 +1,14 @@
 // Writes pixel data to .bmp file
 
-#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+
+#ifdef PARALLEL
+#include <mpi.h>
+#endif
+
 #include "bitmap.h"
 
 // Constants
@@ -13,9 +18,8 @@ const int INFO_HEADER_SIZE = 40; // format-required
 const unsigned char PADDING[3] = {0,0,0}; // .bmp format padding array
 
 // Function declarations
-void _init_parallel(Bitmap *self, const char *file_name);
-void _init_serial(Bitmap *self, const char *file_name);
-int _compute_pixel_offset(const Bitmap *self, int x, int y);
+void _write_at_pixel(const Bitmap *self, long x, long y, const unsigned char *data, long data_len);
+void _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data);
 unsigned char *_create_bmp_file_header(const Bitmap *self);
 unsigned char *_create_bmp_info_header(const Bitmap *self);
 
@@ -29,7 +33,7 @@ unsigned char *_create_bmp_info_header(const Bitmap *self);
  * @param file_type Designates Bitmap as setup for either a @c SERIAL or @c PARALLEL computation environment
  * @return @c Bitmap* The Bitmap object to be output
  */
-Bitmap *Bitmap_init(int width, int height, const char *image_file_name, FileType file_type) {
+Bitmap *Bitmap_init(int width, int height, const char *file_name) {
     Bitmap *self = calloc(1, sizeof(Bitmap));
 
     // set globals
@@ -39,11 +43,36 @@ Bitmap *Bitmap_init(int width, int height, const char *image_file_name, FileType
     // compute padding size (math magic)
     self->_padding_size = (4 - (width * BYTES_PER_PIXEL) % 4) % 4;
 
-    if (file_type == SERIAL) {
-        _init_serial(self, image_file_name);
-    }
-    else if (file_type == PARALLEL) {
-        _init_parallel(self, image_file_name);
+    self->_file = NULL;
+    bool write_headers = true;
+
+    #ifdef PARALLEL
+    MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, self->_file);
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    write_headers = (my_rank == 0);
+    #else
+    self->_file = fopen(file_name, "wb");
+    #endif
+
+
+    if (write_headers) {
+        // create .bmp file headers
+        unsigned char* file_header = _create_bmp_file_header(self);
+        unsigned char* info_header = _create_bmp_info_header(self);
+
+        // Arguments are file, offset, data, data_size, data_type, status.
+        _write_at(self, 0, file_header, FILE_HEADER_SIZE);
+        _write_at(self, FILE_HEADER_SIZE, info_header, INFO_HEADER_SIZE);
+
+        // write temp data and padding to each file row
+        unsigned char temp_data[self->width * BYTES_PER_PIXEL];
+        memset(temp_data, 255, self->width * BYTES_PER_PIXEL); // blank (white) image
+
+        for (int i = 0; i < self->height; i++) {
+            _write_at_pixel(self, 0, i, temp_data, BYTES_PER_PIXEL * self->width);
+            _write_at_pixel(self, self->width, i, PADDING, self->_padding_size);
+        }
     }
 
     return self;
@@ -55,13 +84,11 @@ Bitmap *Bitmap_init(int width, int height, const char *image_file_name, FileType
  * @param self Bitmap object to be removed from memory
  */
 void Bitmap_free(Bitmap *self) {
-    if (self->serial_file != NULL) {
-        fclose(self->serial_file);
-    }
-
-    if (self->parallel_file != NULL) {
-        MPI_File_close(self->parallel_file);
-    }
+    #ifdef PARALLEL
+    MPI_File_close(self->_file);
+    #else
+    fclose(self->_file);
+    #endif
 
     free(self);
 }
@@ -74,33 +101,10 @@ void Bitmap_free(Bitmap *self) {
  * @param x Pixel 'X' coordinate (offset for image plane)
  * @param y Pixel 'Y' coordinate (offset for image plane)
  */
-void Bitmap_write_pixel_serial(Bitmap *self, Rgb pixel, int x, int y) {
-    unsigned char pixel_data[BYTES_PER_PIXEL] = {pixel.blue, pixel.green, pixel.red};
+void Bitmap_write_pixel(Bitmap *self, Rgb pixel, long x, long y) {
+    unsigned char pixel_data[3] = {pixel.blue, pixel.green, pixel.red};
 
-    // compute pixel offset
-    int offset = _compute_pixel_offset(self, x, y);
-
-    // write pixel data to file at appropriate location
-    fseek(self->serial_file, offset, SEEK_SET);
-    fwrite(pixel_data, BYTES_PER_PIXEL, 1, self->serial_file);
-}
-
-/**
- * @brief Writes passed pixel to the output file using parallel MPI methods
- * 
- * @param self Bitmap object
- * @param pixel Rgb enum containing color data
- * @param x Pixel 'X' coordinate (offset for image plane)
- * @param y Pixel 'Y' coordinate (offset for image plane)
- */
-void Bitmap_write_pixel_parallel(Bitmap *self, Rgb pixel, int x, int y) {
-    unsigned char pixel_data[BYTES_PER_PIXEL] = {pixel.blue, pixel.green, pixel.red};
-
-    // compute pixel offset
-    MPI_Offset offset = _compute_pixel_offset(self, x, y);
-
-    // write pixel data to file at appropriate location
-    MPI_File_write_at(*self->parallel_file, offset, pixel_data, BYTES_PER_PIXEL, MPI_UNSIGNED_CHAR, NULL);
+    _write_at_pixel(self, x, y, pixel_data, sizeof(pixel_data));
 }
 
 /**
@@ -111,13 +115,9 @@ void Bitmap_write_pixel_parallel(Bitmap *self, Rgb pixel, int x, int y) {
  * @param num_rows Number of pixel rows
  * @param start_row 'Y' coordinate of the starting row (offset for image plane)
  */
-void Bitmap_write_rows_parallel(Bitmap *self, Rgb **pixels, int num_rows, int start_row) {
-
-    // compute pixel offset
-    MPI_Offset offset = _compute_pixel_offset(self, 0, start_row);
-
+void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows) {
     // compute padding needed and size of array to be written
-    int pixels_data_length = num_rows * ((self->width * BYTES_PER_PIXEL) + self->_padding_size);
+    long pixels_data_length = num_rows * ((self->width * BYTES_PER_PIXEL) + self->_padding_size);
     unsigned char pixels_data[pixels_data_length];
 
     int index = 0;
@@ -139,81 +139,10 @@ void Bitmap_write_rows_parallel(Bitmap *self, Rgb **pixels, int num_rows, int st
         }
     }
 
-    MPI_File_write_at(*self->parallel_file, offset, pixels_data, pixels_data_length, MPI_UNSIGNED_CHAR, NULL);
+    _write_at_pixel(self, 0, start_row, pixels_data, pixels_data_length);
 }
 
 // Private methods
-/**
- * @brief Initialize parallel .bmp file and store pointer in Bitmap object
- * 
- * @param self Bitmap object
- * @param file_name .bmp file name
- */
-void _init_parallel(Bitmap *self, const char *file_name) {
-    self->serial_file = NULL;
-    MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, self->parallel_file);
-
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
-    if (my_rank == 0) {
-        // create .bmp file headers
-        unsigned char* file_header = _create_bmp_file_header(self);
-        unsigned char* info_header = _create_bmp_info_header(self);
-
-        // Arguments are file, offset, data, data_size, data_type, status.
-        MPI_File_write_at(*self->parallel_file, 0, file_header, FILE_HEADER_SIZE, MPI_UNSIGNED_CHAR, NULL);
-        MPI_File_write_at(*self->parallel_file, FILE_HEADER_SIZE, info_header, INFO_HEADER_SIZE, MPI_UNSIGNED_CHAR, NULL);
-
-        // write temp data and padding to each file row
-        unsigned char temp_data[self->width * BYTES_PER_PIXEL];
-        memset(temp_data, 255, self->width * BYTES_PER_PIXEL); // blank (white) image
-
-        for (int i = 0; i < self->height; i++) {
-
-            MPI_File_write_at(  *self->parallel_file, 
-                                _compute_pixel_offset(self, 0, i), 
-                                temp_data, 
-                                self->width * BYTES_PER_PIXEL, 
-                                MPI_UNSIGNED_CHAR,
-                                NULL);
-
-            MPI_File_write_at(  *self->parallel_file,
-                                _compute_pixel_offset(self, self->width, i),
-                                PADDING,
-                                self->_padding_size,
-                                MPI_UNSIGNED_CHAR,
-                                NULL);
-        }
-    }
-}
-
-/**
- * @brief Initialize serial .bmp file and store pointer in Bitmap object
- * 
- * @param self Bitmap object
- * @param file_name .bmp file name
- */
-void _init_serial(Bitmap *self, const char *file_name) {
-    self->parallel_file = NULL;
-    self->serial_file = fopen(file_name, "wb");
-
-    // create .bmp file headers
-    unsigned char* file_header = _create_bmp_file_header(self);
-    unsigned char* info_header = _create_bmp_info_header(self);
-
-    fwrite(file_header, 1, FILE_HEADER_SIZE, self->serial_file);
-    fwrite(info_header, 1, INFO_HEADER_SIZE, self->serial_file);
-
-    // write temp data and padding to each file row
-    unsigned char temp_data[self->width * BYTES_PER_PIXEL];
-    memset(temp_data, 255, self->width * BYTES_PER_PIXEL); // blank (white) image
-
-    for (int i = 0; i < self->height; i++) {
-        fwrite(temp_data, BYTES_PER_PIXEL, self->width, self->serial_file);
-        fwrite(PADDING, 1, self->_padding_size, self->serial_file);
-    }
-}
 
 /**
  * @brief Calculate the offset for a given pixel based on its coords.
@@ -223,8 +152,24 @@ void _init_serial(Bitmap *self, const char *file_name) {
  * @param x Pixel 'X' coordinate (offset for image plane)
  * @param y Pixel 'Y' coordinate (offset for image plane)
  */
-int _compute_pixel_offset(const Bitmap *self, int x, int y) {
-    return FILE_HEADER_SIZE + INFO_HEADER_SIZE + (y * (self->width * BYTES_PER_PIXEL + self->_padding_size)) + (x * BYTES_PER_PIXEL);
+void _write_at_pixel(const Bitmap *self, long x, long y, const unsigned char *data, long data_len) {
+    long pixel_offset = FILE_HEADER_SIZE + INFO_HEADER_SIZE + (y * (self->width * BYTES_PER_PIXEL + self->_padding_size)) + (x * BYTES_PER_PIXEL);
+    _write_at(self, pixel_offset, data, data_len);
+}
+
+void _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data) {
+    // Both parallel and serial versions seek from the beginning of the file every time.
+    #ifdef PARALLEL
+        MPI_File_write_at(*self->_file,
+                            offset,
+                            data,
+                            len_data,
+                            MPI_UNSIGNED_CHAR,
+                            NULL);
+    #else
+        fseek(self->_file, offset, SEEK_SET);
+        fwrite(data, len_data, 1, self->_file);
+    #endif
 }
 
 /**

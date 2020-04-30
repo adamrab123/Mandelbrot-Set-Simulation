@@ -21,7 +21,7 @@ int main() {
             pixel.blue = (unsigned char)(((double) i + j) / (height + width) * 255); // blue
 
             // add pixel data to image
-            Bitmap_write_pixel_serial(bitmap, pixel, j, i);
+            Bitmap_write_pixel(bitmap, pixel, j, i);
         }
     }
     

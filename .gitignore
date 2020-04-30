@@ -1,4 +1,6 @@
+Build/*
 **/*.out
+**/*.swp
 .ipynb_checkpoints/*
 .vscode
 # Ignore my sync script.

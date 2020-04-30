@@ -13,9 +13,19 @@ typedef struct {
 static const Rgb RGB_WHITE = {255, 255, 255};
 static const Rgb RGB_BLACK = {0, 0, 0};
 
+#ifdef __CUDACC__
+__host__ __device__
+#endif
 Rgb ColorMap_rgb_based(double norm_iters);
+
+#ifdef __CUDACC__
+__host__ __device__
+#endif
 Rgb ColorMap_hsv_based(double norm_iters);
 
+#ifdef __CUDACC__
+__host__ __device__
+#endif
 Rgb ColorMap_hsv_to_rgb(double hue, double saturation, double value);
 
 #endif // COLORMAP_H

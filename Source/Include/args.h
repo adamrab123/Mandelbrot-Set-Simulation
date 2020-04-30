@@ -25,12 +25,12 @@ typedef struct {
 Args *Args_init(int argc, char **argv);
 void Args_free(Args *self);
 
-#ifdef PARALLEL
+#ifdef __CUDACC__
 __host__ __device__
 #endif
 void Args_bitmap_dims(const Args *self, long *width, long *height);
 
-#ifdef PARALLEL
+#ifdef __CUDACC__
 __host__ __device__
 #endif
 void Args_bitmap_to_complex(const Args *self, int x, int y, mpc_ptr c);

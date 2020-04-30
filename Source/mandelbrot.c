@@ -8,21 +8,21 @@
 
 #include "mandelbrot.h"
 
-#ifdef PARALLEL
+#ifdef __CUDACC__
 __host__ __device__
 #endif
 void _MandelbrotPoint_set_norm_iters(MandelbrotPoint *self, const Mandelbrot *point);
 
-#ifdef PARALLEL
+#ifdef __CUDACC__
 __host__ __device__
 #endif
 void _check_flags(const char *file, int line);
 
-#ifdef PARALLEL
+#ifdef __CUDACC__
 __host__ __device__
 #endif
 Mandelbrot *Mandelbrot_init(long long max_iters, mpfr_prec_t prec, mpfr_rnd_t rnd) {
-    Mandelbrot *self = malloc(sizeof(Mandelbrot));
+    Mandelbrot *self = (Mandelbrot *)malloc(sizeof(Mandelbrot));
 
     self->max_iters = max_iters;
     self->prec = prec;
@@ -31,7 +31,7 @@ Mandelbrot *Mandelbrot_init(long long max_iters, mpfr_prec_t prec, mpfr_rnd_t rn
     return self;
 }
 
-#ifdef PARALLEL
+#ifdef __CUDACC__
 __host__ __device__
 #endif
 void Mandelbrot_free(Mandelbrot *self) {
@@ -48,7 +48,7 @@ void Mandelbrot_free(Mandelbrot *self) {
  *
  * @return An @c MB_Point instance containing information about the resulting iterations.
  */
-#ifdef PARALLEL
+#ifdef __CUDACC__
 __host__ __device__
 #endif
 MandelbrotPoint *Mandelbrot_iterate(Mandelbrot *self, mpc_t c) {
@@ -81,7 +81,7 @@ MandelbrotPoint *Mandelbrot_iterate(Mandelbrot *self, mpc_t c) {
     }
 
     // Return point information to the user.
-    MandelbrotPoint *point = malloc(sizeof(MandelbrotPoint));
+    MandelbrotPoint *point = (MandelbrotPoint *)malloc(sizeof(MandelbrotPoint));
 
     point->iters_performed = iters_performed;
 
@@ -100,7 +100,7 @@ MandelbrotPoint *Mandelbrot_iterate(Mandelbrot *self, mpc_t c) {
 }
 
 // Free MPFR data contained in the point.
-#ifdef PARALLEL
+#ifdef __CUDACC__
 __host__ __device__
 #endif
 void MandelbrotPoint_free(MandelbrotPoint *point) {
@@ -120,7 +120,7 @@ void MandelbrotPoint_free(MandelbrotPoint *point) {
  *
  * @return A value on the range (0, 1).
  */
-#ifdef PARALLEL
+#ifdef __CUDACC__
 __host__ __device__
 #endif
 void _MandelbrotPoint_set_norm_iters(MandelbrotPoint *self, const Mandelbrot *mb) {
@@ -129,7 +129,7 @@ void _MandelbrotPoint_set_norm_iters(MandelbrotPoint *self, const Mandelbrot *mb
     if (!self->diverged) {
         // Points in the set are given the value 1.
         // They may cause NaN results if run through the log calculation below.
-        mpfr_set_ui(self->norm_iters, 1, mb->prec);
+        mpfr_set_ui(self->norm_iters, 1, mb->rnd);
     }
     else {
         // Compute the following to get a number on teh range (0, max_iter), then normalize to be on (0, 1).
@@ -161,7 +161,7 @@ void _MandelbrotPoint_set_norm_iters(MandelbrotPoint *self, const Mandelbrot *mb
     }
 }
 
-#ifdef PARALLEL
+#ifdef __CUDACC__
 __host__ __device__
 #endif
 void _check_flags(const char *file, int line) {

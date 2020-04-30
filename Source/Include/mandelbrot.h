@@ -9,9 +9,6 @@
 
 // BEGIN TYPEDEFS
 
-#ifdef PARALLEL
-__host__ __device__
-#endif
 typedef struct {
     long long max_iters;
     mpfr_prec_t prec;
@@ -23,9 +20,6 @@ typedef struct {
  * 
  * Fields are named based on the Mandelbrot set formula z = z_prev^2 + c.
  */
-#ifdef PARALLEL
-__host__ __device__
-#endif
 typedef struct {
     int iters_performed; /** The number of Mandelbrot iterations performed on @c c. */
     mpc_t c; /** The imaginary number whose Mandelbrot info is contained in this struct. */
@@ -36,21 +30,21 @@ typedef struct {
 
 // END TYPEDEFS
 
-#ifdef PARALLEL
+#ifdef __CUDACC__
 __host__ __device__
 #endif
 Mandelbrot *Mandelbrot_init(long long max_iters, mpfr_prec_t prec, mpfr_rnd_t rnd);
-#ifdef PARALLEL
+#ifdef __CUDACC__
 __host__ __device__
 #endif
 void Mandelbrot_free(Mandelbrot *self);
 
-#ifdef PARALLEL
+#ifdef __CUDACC__
 __host__ __device__
 #endif
 MandelbrotPoint *Mandelbrot_iterate(Mandelbrot *self, mpc_t c);
 
-#ifdef PARALLEL
+#ifdef __CUDACC__
 __host__ __device__
 #endif
 void MandelbrotPoint_free(MandelbrotPoint *self);

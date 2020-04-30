@@ -7,7 +7,6 @@
 #include <mpi.h>
 #endif
 
-#include "mandelbrot.h"
 #include "colormap.h"
 
 /**

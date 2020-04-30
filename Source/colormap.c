@@ -15,6 +15,9 @@
  *
  * @return An RGB representation of @p point.
  */
+#ifdef __CUDACC__
+__host__ __device__
+#endif
 Rgb ColorMap_rgb_based(double norm_iters) {
     // Produces number on range (0, 3).
     double color_fraction = norm_iters * 3;
@@ -52,6 +55,9 @@ Rgb ColorMap_rgb_based(double norm_iters) {
  *
  * @return An RGB representation of @p point converted from an HSV value.
  */
+#ifdef __CUDACC__
+__host__ __device__
+#endif
 Rgb ColorMap_hsv_based(double norm_iters) {
     // Hues on [0, 360].
     // Seems like any value below 60 is converted to solid red, always the same shade.
@@ -81,13 +87,16 @@ Rgb ColorMap_hsv_based(double norm_iters) {
  *
  * @return An RGB color representation that is identical to the provided HSV color representation.
  */
+#ifdef __CUDACC__
+__host__ __device__
+#endif
 Rgb ColorMap_hsv_to_rgb(double hue, double saturation, double value) {
     double d_red = 0;
     double d_green = 0;
     double d_blue = 0;
 
     // If saturation is basically zero.
-    if (abs(saturation) < 0.001) {
+    if (fabs(saturation) < 0.001) {
         d_red = value;
         d_green = value;
         d_blue = value;

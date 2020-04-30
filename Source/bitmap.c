@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #ifdef PARALLEL
 #include <mpi.h>
@@ -159,7 +160,7 @@ void _write_at_pixel(const Bitmap *self, long x, long y, const unsigned char *da
 void _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data) {
     // Both parallel and serial versions seek from the beginning of the file every time.
     #ifdef PARALLEL
-        MPI_File_write_at(self->_file,
+        MPI_File_write_at(*self->_file,
                             offset,
                             data,
                             len_data,

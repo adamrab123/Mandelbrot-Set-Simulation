@@ -1,10 +1,11 @@
+#include <stdlib.h>
 #include <mpfr.h>
 #include <mpc.h>
 #include <getopt.h>
 
 #include "args.h"
 
-Args *Args_init(int argc, const char **argv) {
+Args *Args_init(int argc, char **argv) {
     Args *self = malloc(sizeof(Args));
 
     // The base that numbers entered at the command line are in.
@@ -19,7 +20,7 @@ Args *Args_init(int argc, const char **argv) {
     mpfr_set_str(self->x_min, "-2.1", base, self->rnd);
     mpfr_set_str(self->x_max, "1", base, self->rnd);
     mpfr_set_str(self->y_min, "-1.5", base, self->rnd);
-    mpfr_set_str(self->y_max, "-1.5", base, self->rnd);
+    mpfr_set_str(self->y_max, "1.5", base, self->rnd);
     mpfr_set_str(self->step_size, "0.01", base, self->rnd);
 
     self->iterations = 100;
@@ -41,19 +42,19 @@ void Args_free(Args *self) {
 #ifdef PARALLEL
 __host__ __device__
 #endif
-void Args_bitmap_dims(const Args *self, int *width, int *height) {
+void Args_bitmap_dims(const Args *self, long *width, long *height) {
     mpfr_t temp;
     mpfr_init2(temp, self->prec);
 
     // Calculate width = (x_max - x_min) / step_size
     mpfr_sub(temp, self->x_max, self->x_min, self->rnd);
     mpfr_div(temp, temp, self->step_size, self->rnd);
-    *width = mpfr_get_ui(temp, self->rnd);
+    *width = mpfr_get_si(temp, self->rnd);
 
     // Calculate height = (y_max - y_min) / step_size
     mpfr_sub(temp, self->y_max, self->y_min, self->rnd);
     mpfr_div(temp, temp, self->step_size, self->rnd);
-    *height = mpfr_get_ui(temp, self->rnd);
+    *height = mpfr_get_si(temp, self->rnd);
 
     mpfr_clear(temp);
 }

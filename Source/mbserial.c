@@ -3,22 +3,22 @@
 
 #include "mbserial.h"
 #include "bitmap.h"
-#include "args.h"
 
 void compute_mandelbrot_serial(const Args *args) {
-    int px_width, px_height;
+    long px_width, px_height;
     Args_bitmap_dims(args, &px_width, &px_height);
+    printf("width: %ld, height: %ld\n", px_width, px_height);
 
-    Bitmap *bitmap = Bitmap_init(px_width, px_height, args->output_file, SERIAL);
+    Bitmap *bitmap = Bitmap_init(px_width, px_height, args->output_file);
 
     mpc_t c;
     mpc_init2(c, args->prec);
 
     Mandelbrot *mb = Mandelbrot_init(args->iterations, args->prec, args->rnd);
 
-    for (int y = 0; y < px_height; y++) {
-        for (int x = 0; x < px_width; x++) {
-            bitmap_to_complex(x, y, c);
+    for (long y = 0; y < px_height; y++) {
+        for (long x = 0; x < px_width; x++) {
+            Args_bitmap_to_complex(args, x, y, c);
             MandelbrotPoint *point = Mandelbrot_iterate(mb, c);
 
             Rgb color;

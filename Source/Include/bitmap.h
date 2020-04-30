@@ -10,16 +10,14 @@
 #include "mandelbrot.h"
 #include "colormap.h"
 
-typedef unsigned long ul;
-
 /**
  * @brief Bitmap object containing file pointers and useful info 
  */
 typedef struct {
     // Public
     char *image_file_name;
-    ul height;
-    ul width;
+    long height;
+    long width;
 
     // Private
     int _padding_size;
@@ -57,7 +55,7 @@ void Bitmap_free(Bitmap *self);
  * @param x Pixel 'X' coordinate (offset for image plane)
  * @param y Pixel 'Y' coordinate (offest for image plane)
  */
-void Bitmap_write_pixel(Bitmap *self, Rgb pixel, long x, long y) {
+void Bitmap_write_pixel(Bitmap *self, Rgb pixel, long x, long y);
 
 /**
  * @brief Writes passed pixel rows to the output file using parallel MPI methods

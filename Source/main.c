@@ -2,7 +2,7 @@
 
 int main(int argc, char **argv) {
     // Hard code arguments for now.
-    const Args *args = Args_init(argc, argv);
+    Args *args = Args_init(argc, argv);
 
     #ifdef PARALLEL
     #include "mbparallel.h"

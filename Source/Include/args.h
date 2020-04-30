@@ -21,13 +21,14 @@ typedef struct {
     int block_size;
 } Args;
 
-Args *Args_init(int argc, const char **argv);
+Args *Args_init(int argc, char **argv);
 void Args_free(Args *self);
 
 #ifdef PARALLEL
 __host__ __device__
 #endif
-void Args_bitmap_dims(const Args *self, int *width, int *height);
+void Args_bitmap_dims(const Args *self, long *width, long *height);
+
 #ifdef PARALLEL
 __host__ __device__
 #endif

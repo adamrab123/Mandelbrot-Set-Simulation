@@ -16,8 +16,6 @@
  * @param grid the grid
  */
 __global__ void _mandelbrot_kernel(Rgb **grid, long grid_width, long grid_height, long grid_offset_y, const Args *args) {
-    Mandelbrot *mb = Mandelbrot_init(args->iterations, args->prec, args->rnd);
-
     // Strided CUDA for loop.
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
@@ -26,14 +24,14 @@ __global__ void _mandelbrot_kernel(Rgb **grid, long grid_width, long grid_height
         int grid_x = index / grid_width;
         int grid_y = grid_offset_y + index % grid_height;
 
-        mpc_t c;
-        Args_bitmap_to_complex(args, grid_x, grid_y, c);
+        double c_real, c_imag;
+        Args_bitmap_to_complex(args, grid_x, grid_y, &c_real, &c_imag);
 
-        MandelbrotPoint *point = Mandelbrot_iterate(mb, c);
+        MandelbrotPoint *point = Mandelbrot_iterate(c_real, c_imag, args->iterations);
 
-        double norm_iters = 0;
-        //mpfr_get_d(point->norm_iters, args->rnd);
-        grid[grid_x][grid_y] = ColorMap_hsv_based(norm_iters);
+        grid[grid_x][grid_y] = ColorMap_hsv_based(point->norm_iters);
+
+        MandelbrotPoint_free(point);
     }
 }
 

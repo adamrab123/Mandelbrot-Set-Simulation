@@ -3,29 +3,24 @@
 
 #include "mbserial.h"
 #include "bitmap.h"
+#include "mandelbrot.h"
 
 void compute_mandelbrot_serial(const Args *args) {
     long px_width, px_height;
     Args_bitmap_dims(args, &px_width, &px_height);
-    printf("width: %ld, height: %ld\n", px_width, px_height);
 
     Bitmap *bitmap = Bitmap_init(px_width, px_height, args->output_file);
 
-    mpc_t c;
-    mpc_init2(c, args->prec);
-
-    Mandelbrot *mb = Mandelbrot_init(args->iterations, args->prec, args->rnd);
-
     for (long y = 0; y < px_height; y++) {
         for (long x = 0; x < px_width; x++) {
-            Args_bitmap_to_complex(args, x, y, c);
-            MandelbrotPoint *point = Mandelbrot_iterate(mb, c);
+            double c_real, c_imag;
+            Args_bitmap_to_complex(args, x, y, &c_real, &c_imag);
+            MandelbrotPoint *point = Mandelbrot_iterate(c_real, c_imag, args->iterations);
 
             Rgb color;
 
             if (point->diverged) {
-                double norm_iters = mpfr_get_d(point->norm_iters, args->prec);
-                color = ColorMap_hsv_based(norm_iters);
+                color = ColorMap_hsv_based(point->norm_iters);
             }
             else {
                 color = RGB_BLACK;
@@ -37,6 +32,4 @@ void compute_mandelbrot_serial(const Args *args) {
     }
 
     Bitmap_free(bitmap);
-    Mandelbrot_free(mb);
-    mpc_clear(c);
 }

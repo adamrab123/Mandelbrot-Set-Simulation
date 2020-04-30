@@ -1,6 +1,9 @@
 #include <math.h>
 #include "mbcomplex.h"
 
+#ifdef __CUDACC__
+__host__ __device__
+#endif
 MbComplex MbComplex_init(Part real, Part imag) {
     MbComplex result;
     result.real = real;
@@ -9,6 +12,9 @@ MbComplex MbComplex_init(Part real, Part imag) {
     return result;
 }
 
+#ifdef __CUDACC__
+__host__ __device__
+#endif
 MbComplex MbComplex_add(MbComplex num1, MbComplex num2) {
     MbComplex result;
     result.real = num1.real + num2.real;
@@ -17,6 +23,9 @@ MbComplex MbComplex_add(MbComplex num1, MbComplex num2) {
     return result;
 }
 
+#ifdef __CUDACC__
+__host__ __device__
+#endif
 MbComplex MbComplex_mul(MbComplex num1, MbComplex num2) {
     MbComplex result;
     result.real = (num1.real * num2.real) - (num1.imag * num2.imag);
@@ -25,10 +34,16 @@ MbComplex MbComplex_mul(MbComplex num1, MbComplex num2) {
     return result;
 }
 
+#ifdef __CUDACC__
+__host__ __device__
+#endif
 Part MbComplex_abs(MbComplex num) {
     return sqrtf(pow(num.real, 2) + pow(num.imag, 2));
 }
 
+#ifdef __CUDACC__
+__host__ __device__
+#endif
 void MbComplex_assign(MbComplex lvalue, MbComplex rvalue) {
     lvalue.real = rvalue.real;
     lvalue.imag = rvalue.imag;

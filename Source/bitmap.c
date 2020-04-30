@@ -17,7 +17,7 @@ const int INFO_HEADER_SIZE = 40; // format-required
 const unsigned char PADDING[3] = {0,0,0}; // .bmp format padding array
 
 // Function declarations
-int _write_at_pixel(const Bitmap *self, long x, long y, const unsigned char *data, long data_len);
+void _write_at_pixel(const Bitmap *self, long x, long y, const unsigned char *data, long data_len);
 void _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data);
 unsigned char *_create_bmp_file_header(const Bitmap *self);
 unsigned char *_create_bmp_info_header(const Bitmap *self);
@@ -151,7 +151,7 @@ void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows
  * @param x Pixel 'X' coordinate (offset for image plane)
  * @param y Pixel 'Y' coordinate (offset for image plane)
  */
-int _write_at_pixel(const Bitmap *self, long x, long y, const unsigned char *data, long data_len) {
+void _write_at_pixel(const Bitmap *self, long x, long y, const unsigned char *data, long data_len) {
     long pixel_offset = FILE_HEADER_SIZE + INFO_HEADER_SIZE + (y * (self->width * BYTES_PER_PIXEL + self->_padding_size)) + (x * BYTES_PER_PIXEL);
     _write_at(self, pixel_offset, data, data_len);
 }

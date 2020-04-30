@@ -26,6 +26,8 @@ Args *Args_init(int argc, char **argv) {
     self->iterations = 100;
     self->output_file = "output.bmp";
     self->block_size = 4;
+
+    return self;
 }
 
 void Args_free(Args *self) {

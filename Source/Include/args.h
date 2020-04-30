@@ -1,6 +1,7 @@
 #ifndef ARGS_H
 #define ARGS_H
 
+#include <gmp.h>
 #include <mpfr.h>
 #include <mpc.h>
 

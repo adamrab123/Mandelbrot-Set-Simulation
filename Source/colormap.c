@@ -82,7 +82,9 @@ Rgb ColorMap_hsv_based(double norm_iters) {
  * @return An RGB color representation that is identical to the provided HSV color representation.
  */
 Rgb ColorMap_hsv_to_rgb(double hue, double saturation, double value) {
-    double d_red, d_green, d_blue;
+    double d_red = 0;
+    double d_green = 0;
+    double d_blue = 0;
 
     // If saturation is basically zero.
     if (abs(saturation) < 0.001) {

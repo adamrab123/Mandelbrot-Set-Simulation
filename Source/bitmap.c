@@ -27,21 +27,20 @@ unsigned char *_create_bmp_info_header(const Bitmap *self);
 /**
  * @brief Initialize the Btimap object and .bmp output file
  * 
- * @param width Image width
- * @param height Image height
+ * @param num_rows Height of the image in pixels.
+ * @param num_cols Width of the image in pixels.
  * @param image_file_name Output file name
  * @param file_type Designates Bitmap as setup for either a @c SERIAL or @c PARALLEL computation environment
  * @return @c Bitmap* The Bitmap object to be output
  */
-Bitmap *Bitmap_init(int width, int height, const char *file_name) {
+Bitmap *Bitmap_init(int num_rows, int num_cols, const char *file_name) {
     Bitmap *self = calloc(1, sizeof(Bitmap));
 
-    // set globals
-    self->width = width;
-    self->height = height;
+    self->width = num_cols;
+    self->height = num_rows;
 
     // compute padding size (math magic)
-    self->_padding_size = (4 - (width * BYTES_PER_PIXEL) % 4) % 4;
+    self->_padding_size = (4 - (self->width * BYTES_PER_PIXEL) % 4) % 4;
 
     bool write_headers = true;
 
@@ -97,13 +96,14 @@ void Bitmap_free(Bitmap *self) {
  * 
  * @param self Bitmap object
  * @param pixel Rgb enum containing color data
- * @param x Pixel 'X' coordinate (offset for image plane)
- * @param y Pixel 'Y' coordinate (offset for image plane)
+ * @param row The row if the pixel, indexed from top left corner.
+ * @param col The column of the pixel, indexed from top left corner.
  */
-void Bitmap_write_pixel(Bitmap *self, Rgb pixel, long x, long y) {
+void Bitmap_write_pixel(Bitmap *self, Rgb pixel, long row, long col) {
     unsigned char pixel_data[3] = {pixel.blue, pixel.green, pixel.red};
 
-    _write_at_pixel(self, x, y, pixel_data, sizeof(pixel_data));
+    // Convert top left origin row col parameters to bottom left origin x y parameters.
+    _write_at_pixel(self, self->width - col, self->height - row, pixel_data, sizeof(pixel_data));
 }
 
 /**
@@ -112,7 +112,7 @@ void Bitmap_write_pixel(Bitmap *self, Rgb pixel, long x, long y) {
  * @param self Bitmap object
  * @param pixels Array of pixel rows
  * @param num_rows Number of pixel rows
- * @param start_row 'Y' coordinate of the starting row (offset for image plane)
+ * @param start_row The pixel row index to start writing at, with origin in the top left corner.
  */
 void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows) {
     // compute padding needed and size of array to be written
@@ -137,7 +137,8 @@ void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows
         }
     }
 
-    _write_at_pixel(self, 0, start_row, pixels_data, pixels_data_length);
+    // Convert top left origin based start_row to bottom left origin based y coordinate.
+    _write_at_pixel(self, 0, self->width - start_row, pixels_data, pixels_data_length);
 }
 
 // Private methods
@@ -147,8 +148,8 @@ void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows
  *        The formula takes into account both header sizes, the bytes per pixel value
  *        for each pixel and the amount of padding present in each row.
  * 
- * @param x Pixel 'X' coordinate (offset for image plane)
- * @param y Pixel 'Y' coordinate (offset for image plane)
+ * @param x X coordinate of the pixel with origin in the bottom left corner.
+ * @param y Y coordinate of the pixel with origin in the bottom left corner.
  */
 void _write_at_pixel(const Bitmap *self, long x, long y, const unsigned char *data, long data_len) {
     long pixel_offset = FILE_HEADER_SIZE + INFO_HEADER_SIZE + (y * (self->width * BYTES_PER_PIXEL + self->_padding_size)) + (x * BYTES_PER_PIXEL);

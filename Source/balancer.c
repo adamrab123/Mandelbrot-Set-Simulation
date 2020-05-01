@@ -1,3 +1,5 @@
+#define PARALLEL
+
 #include "balancer.h"
 #include "args.h"
 #include "bitmap.h"
@@ -6,12 +8,12 @@
 #ifdef PARALLEL
 // Cuda functions that only exist when kernel.cu is linked in parallel mode.
 extern void cuda_init(int my_rank);
-extern void launch_mandelbrot_kernel(Rgb ** grid, long grid_width, long grid_height, long grid_offset_y, const Args *args);
+extern void launch_mandelbrot_kernel(Rgb ** grid, long num_rows, long num_cols, long grid_offset_y, const Args *args);
 #endif
 
-void _free_grid(Rgb **grid, long grid_width, long grid_height);
-long _get_y_offset(long grid_height);
-Rgb **_allocate_grid(long grid_width, long grid_height);
+void _free_grid(Rgb **grid, long num_rows, long num_cols);
+long _get_start_row(long num_cols);
+Rgb **_allocate_grid(long num_rows, long num_cols);
 
 #ifdef PARALLEL
 /**
@@ -26,21 +28,21 @@ void compute_mandelbrot_parallel(const Args *args) {
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     cuda_init(myrank);
 
-    long grid_width, grid_height;
-    Args_bitmap_dims(args, &grid_width, &grid_height);
+    long num_rows, num_cols;
+    Args_get_bitmap_dims(args, &num_rows, &num_cols);
 
-    Rgb **grid = _allocate_grid(grid_width, grid_height);
+    Rgb **grid = _allocate_grid(num_rows, num_cols);
 
-    Bitmap *bitmap = Bitmap_init(grid_width, grid_height, args->output_file);
+    Bitmap *bitmap = Bitmap_init(num_rows, num_cols, args->output_file);
 
-    long grid_offset_y = _get_y_offset(grid_height);
+    long start_row = _get_start_row(num_cols);
 
-    launch_mandelbrot_kernel(grid, grid_width, grid_height, grid_offset_y, args);
+    launch_mandelbrot_kernel(grid, start_row, num_rows, num_cols, args);
     MPI_Barrier(MPI_COMM_WORLD);
 
-    Bitmap_write_rows(bitmap, grid, grid_offset_y, grid_height);
+    Bitmap_write_rows(bitmap, grid, start_row, num_cols);
 
-    _free_grid(grid, grid_width, grid_height);
+    _free_grid(grid, num_rows, num_cols);
 
     Bitmap_free(bitmap);
 
@@ -50,15 +52,15 @@ void compute_mandelbrot_parallel(const Args *args) {
 
 #ifndef PARALLEL
 void compute_mandelbrot_serial(const Args *args) {
-    long px_width, px_height;
-    Args_bitmap_dims(args, &px_width, &px_height);
+    long num_rows, num_cols;
+    Args_get_bitmap_dims(args, &num_rows, &num_cols);
 
-    Bitmap *bitmap = Bitmap_init(px_width, px_height, args->output_file);
+    Bitmap *bitmap = Bitmap_init(num_cols, num_rows, args->output_file);
 
-    for (long y = 0; y < px_height; y++) {
-        Rgb **grid = _allocate_grid(px_width, 1);
+    for (long y = 0; y < num_rows; y++) {
+        Rgb **grid = _allocate_grid(num_cols, 1);
 
-        for (long x = 0; x < px_width; x++) {
+        for (long x = 0; x < num_cols; x++) {
             double c_real, c_imag;
             Args_bitmap_to_complex(args, x, y, &c_real, &c_imag);
             MandelbrotPoint *point = Mandelbrot_iterate(c_real, c_imag, args->iterations);
@@ -77,7 +79,7 @@ void compute_mandelbrot_serial(const Args *args) {
         }
 
         Bitmap_write_rows(bitmap, grid, y, 1);
-        _free_grid(grid, px_width, 1);
+        _free_grid(grid, num_cols, 1);
     }
 
     Bitmap_free(bitmap);
@@ -85,29 +87,29 @@ void compute_mandelbrot_serial(const Args *args) {
 #endif
 
 /**
- * @brief Allocates the grid of size @p grid_width by @p grid_height using cudaMallocManaged
+ * @brief Allocates the grid of size @p num_rows by @p num_cols using cudaMallocManaged
  * 
- * @param grid_width the width of the grid
- * @param grid_height the height of the grid
+ * @param num_rows the width of the grid
+ * @param num_cols the height of the grid
  * 
  * @return grid
  */
-Rgb **_allocate_grid(long grid_width, long grid_height){
+Rgb **_allocate_grid(long num_rows, long num_cols){
     Rgb **grid = NULL;
 
     // allocate rows
-    grid = calloc(grid_height, sizeof(Rgb *)); 
+    grid = calloc(num_cols, sizeof(Rgb *)); 
 
     // allocate columns
-    for (long i = 0; i < grid_height; i++){
-        grid[i] = calloc(grid_width, sizeof(Rgb)); 
+    for (long i = 0; i < num_cols; i++){
+        grid[i] = calloc(num_rows, sizeof(Rgb)); 
     }
 
     return grid;
 }
 
-void _free_grid(Rgb **grid, long grid_width, long grid_height) {
-    for (long i = 0; i < grid_height; i++){
+void _free_grid(Rgb **grid, long num_rows, long num_cols) {
+    for (long i = 0; i < num_rows; i++){
         free(grid[i]);
     }
 
@@ -116,26 +118,24 @@ void _free_grid(Rgb **grid, long grid_width, long grid_height) {
 
 #ifdef PARALLEL
 /**
- * @brief Calculate the y index in the bitmap image grid that this process should begin calculating.
+ * @brief Calculate the row in the bitmap image grid that this process should begin calculating.
  *
- * This is purely an integer calcualtion since we are in the grid space, and does not need mpfr.
- * 
- * @param grid_height
+ * @param num_cols
  */
-long _get_y_offset(long grid_height) {
+long _get_start_row(long num_rows) {
     int my_rank, num_ranks;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-    long offset = 0;
-    if (grid_height % num_ranks == 0 || my_rank != num_ranks - 1) {
-        offset = (grid_height / num_ranks) * my_rank;
+    long start_row = 0;
+    if (num_rows % num_ranks == 0 || my_rank != num_ranks - 1) {
+        start_row = (num_rows / num_ranks) * my_rank;
     }
     else {
-        long remainder = grid_height % num_ranks;
-        offset = grid_height - remainder;
+        long remainder = num_rows % num_ranks;
+        start_row = num_rows - remainder;
     }
 
-    return offset;
+    return start_row;
 }
 #endif

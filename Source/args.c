@@ -30,17 +30,17 @@ void Args_free(Args *self) {
 #ifdef __CUDACC__
 __host__ __device__
 #endif
-void Args_bitmap_dims(const Args *self, long *width, long *height) {
-    *width = floor((self->x_max - self->x_min) / self->step_size);
-    *height = floor((self->y_max - self->y_min) / self->step_size);
+void Args_get_bitmap_dims(const Args *self, long *num_rows, long *num_cols) {
+    *num_rows = floor((self->y_max - self->y_min) / self->step_size);
+    *num_cols = floor((self->x_max - self->x_min) / self->step_size);
 }
 
 #ifdef __CUDACC__
 __host__ __device__
 #endif
-void Args_bitmap_to_complex(const Args *self, int x, int y, double *c_real, double *c_imag) {
-    *c_real = x * self->step_size + self->x_min;
-    *c_imag = y * self->step_size + self->y_min;
+void Args_bitmap_to_complex(const Args *self, long row, long col, double *c_real, double *c_imag) {
+    *c_real = col * self->step_size + self->x_min;
+    *c_imag = row * self->step_size + self->y_min;
 }
 
 /**

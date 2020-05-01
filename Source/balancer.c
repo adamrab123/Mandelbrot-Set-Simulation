@@ -1,15 +1,19 @@
-#include "mbparallel.h"
+#include "balancer.h"
 #include "args.h"
 #include "bitmap.h"
+#include "mandelbrot.h"
 
-// Cuda functions
+#ifdef PARALLEL
+// Cuda functions that only exist when kernel.cu is linked in parallel mode.
 extern void cuda_init(int my_rank);
 extern void launch_mandelbrot_kernel(Rgb ** grid, long grid_width, long grid_height, long grid_offset_y, const Args *args);
+#endif
 
 void _free_grid(Rgb **grid, long grid_width, long grid_height);
 long _get_y_offset(long grid_height);
 Rgb **_allocate_grid(long grid_width, long grid_height);
 
+#ifdef PARALLEL
 /**
  * @brief Starts the kernel with for each rank and assigns each rank a portion of the grid
  * 
@@ -42,6 +46,43 @@ void compute_mandelbrot_parallel(const Args *args) {
 
     MPI_Finalize();
 }
+#endif
+
+#ifndef PARALLEL
+void compute_mandelbrot_serial(const Args *args) {
+    long px_width, px_height;
+    Args_bitmap_dims(args, &px_width, &px_height);
+
+    Bitmap *bitmap = Bitmap_init(px_width, px_height, args->output_file);
+
+    for (long y = 0; y < px_height; y++) {
+        Rgb **grid = _allocate_grid(px_width, 1);
+
+        for (long x = 0; x < px_width; x++) {
+            double c_real, c_imag;
+            Args_bitmap_to_complex(args, x, y, &c_real, &c_imag);
+            MandelbrotPoint *point = Mandelbrot_iterate(c_real, c_imag, args->iterations);
+
+            Rgb color;
+
+            if (point->diverged) {
+                color = ColorMap_hsv_based(point->norm_iters);
+            }
+            else {
+                color = RGB_BLACK;
+            }
+
+            grid[0][x] = color;
+            free(point);
+        }
+
+        Bitmap_write_rows(bitmap, grid, y, 1);
+        _free_grid(grid, px_width, 1);
+    }
+
+    Bitmap_free(bitmap);
+}
+#endif
 
 /**
  * @brief Allocates the grid of size @p grid_width by @p grid_height using cudaMallocManaged
@@ -73,6 +114,7 @@ void _free_grid(Rgb **grid, long grid_width, long grid_height) {
     free(grid);
 }
 
+#ifdef PARALLEL
 /**
  * @brief Calculate the y index in the bitmap image grid that this process should begin calculating.
  *
@@ -96,3 +138,4 @@ long _get_y_offset(long grid_height) {
 
     return offset;
 }
+#endif

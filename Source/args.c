@@ -8,10 +8,11 @@
 Args *Args_init(int argc, char **argv) {
     Args *self = (Args *)malloc(sizeof(Args));
 
-    // self->x_min = -2.1;
-    // self->x_max = 1;
-    // self->y_min = -1.5;
-    // self->y_max = 1.5;
+    // Normal viewpoint.
+    self->x_min = -2.1;
+    self->x_max = 1;
+    self->y_min = -1.5;
+    self->y_max = 1.5;
 
     // Square image test.
     // self->x_min = -2;
@@ -26,10 +27,10 @@ Args *Args_init(int argc, char **argv) {
     // self->y_max = 1;
 
     // Taller image test.
-    self->x_min = -1;
-    self->x_max = 1;
-    self->y_min = -2;
-    self->y_max = 2;
+    // self->x_min = -1;
+    // self->x_max = 1;
+    // self->y_min = -2;
+    // self->y_max = 2;
 
     self->step_size = 0.01;
 
@@ -51,8 +52,8 @@ void Args_free(Args *self) {
 __host__ __device__
 #endif
 void Args_get_bitmap_dims(const Args *self, long *num_rows, long *num_cols) {
-    *num_rows = ceil((self->y_max - self->y_min) / self->step_size);
-    *num_cols = ceil((self->x_max - self->x_min) / self->step_size);
+    *num_rows = round((self->y_max - self->y_min) / self->step_size);
+    *num_cols = round((self->x_max - self->x_min) / self->step_size);
 }
 
 #ifdef __CUDACC__

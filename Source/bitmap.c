@@ -18,7 +18,7 @@ const int INFO_HEADER_SIZE = 40; // format-required
 const unsigned char PADDING[3] = {0,0,0}; // .bmp format padding array
 
 // Function declarations
-void _write_at_pixel(const Bitmap *self, long x, long y, const unsigned char *data, long data_len);
+void _write_at_pixel(const Bitmap *self, long row, long col, const unsigned char *data, long data_len);
 void _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data);
 unsigned char *_create_bmp_file_header(const Bitmap *self);
 unsigned char *_create_bmp_info_header(const Bitmap *self);
@@ -67,8 +67,9 @@ Bitmap *Bitmap_init(long num_rows, long num_cols, const char *file_name) {
         memset(temp_data, 255, self->num_cols * BYTES_PER_PIXEL); // blank (white) image
 
         for (int i = 0; i < self->num_rows; i++) {
+            // Put padding and whitespace filler in every row.
             _write_at_pixel(self, 0, i, temp_data, BYTES_PER_PIXEL * self->num_cols);
-            _write_at_pixel(self, self->num_cols, i, PADDING, self->_padding_size);
+            _write_at_pixel(self, self->num_cols - 1, i, PADDING, self->_padding_size);
         }
     }
 
@@ -106,8 +107,7 @@ void Bitmap_free(Bitmap *self) {
 void Bitmap_write_pixel(Bitmap *self, Rgb pixel, long row, long col) {
     unsigned char pixel_data[3] = {pixel.blue, pixel.green, pixel.red};
 
-    // Convert top left origin row col parameters to bottom left origin x y parameters.
-    _write_at_pixel(self, self->num_cols - col, self->num_rows - row, pixel_data, sizeof(pixel_data));
+    _write_at_pixel(self, row, col, pixel_data, sizeof(pixel_data));
 }
 
 /**
@@ -141,8 +141,7 @@ void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows
         }
     }
 
-    // Convert top left origin based start_row to bottom left origin based y coordinate.
-    _write_at_pixel(self, 0, self->num_rows - (start_row + 1), pixels_data, pixels_data_length);
+    _write_at_pixel(self, start_row, 0, pixels_data, pixels_data_length);
 }
 
 // Private methods
@@ -155,7 +154,11 @@ void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows
  * @param x X coordinate of the pixel with origin in the bottom left corner.
  * @param y Y coordinate of the pixel with origin in the bottom left corner.
  */
-void _write_at_pixel(const Bitmap *self, long x, long y, const unsigned char *data, long data_len) {
+void _write_at_pixel(const Bitmap *self, long row, long col, const unsigned char *data, long data_len) {
+    // Rows and columns (origin in top left) are converted to bitmap x and y (origin in bottom left).
+    long x = col;
+    long y = self->num_rows - (row + 1);
+
     long pixel_offset = FILE_HEADER_SIZE + INFO_HEADER_SIZE + (y * (self->num_cols * BYTES_PER_PIXEL + self->_padding_size)) + (x * BYTES_PER_PIXEL);
     _write_at(self, pixel_offset, data, data_len);
 }

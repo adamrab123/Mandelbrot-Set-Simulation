@@ -53,7 +53,7 @@ void compute_mandelbrot_serial(const Args *args) {
     long num_rows, num_cols;
     Args_get_bitmap_dims(args, &num_rows, &num_cols);
 
-    Bitmap *bitmap = Bitmap_init(num_cols, num_rows, args->output_file);
+    Bitmap *bitmap = Bitmap_init(num_rows, num_cols, args->output_file);
 
     for (long row = 0; row < num_rows; row++) {
         // Grid will be used to contain a single row.

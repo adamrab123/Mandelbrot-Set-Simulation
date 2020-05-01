@@ -59,7 +59,7 @@ serial: $(wildcard Source/*.c) $(wildcard Source/Include*.h)
 debug-serial: GCC_FLAGS += -g
 debug-serial: serial
 
-debug-parallel: NVCC_FLAGS += -gG
+debug-parallel: NVCC_FLAGS += -g -G
 debug-parallel: GCC_FLAGS += -g
 debug-parallel: parallel
 

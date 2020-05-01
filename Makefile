@@ -6,6 +6,8 @@ PARALLEL = -D PARALLEL
 BUILD_DIR = Build
 EXE = -o ${BUILD_DIR}/mandelbrot
 
+.PHONY: clean
+
 # Use this on Aimos.
 parallel: $(wildcard Source/*.c) $(wildcard Source/*.cu) $(wildcard Source/*.h)
 		mkdir -p ${BUILD_DIR}
@@ -24,7 +26,7 @@ parallel: $(wildcard Source/*.c) $(wildcard Source/*.cu) $(wildcard Source/*.h)
 		nvcc -x cu -dc ${PARALLEL} ${INCLUDE} ${NVCC_FLAGS} Source/colormap.c -o ${BUILD_DIR}/colormap.o
 
 		# Link all cuda object files into one object file.
-		nvcc ${PARALLEL} -arch=sm_70 -dlink \
+		nvcc ${PARALLEL} ${NVCC_FLAGS} -dlink \
 		${BUILD_DIR}/kernel.o \
 		${BUILD_DIR}/mandelbrot.o \
 		${BUILD_DIR}/mbcomplex.o \

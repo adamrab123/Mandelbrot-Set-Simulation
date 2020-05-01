@@ -10,7 +10,14 @@ typedef struct {
     unsigned char red;
 } Rgb;
 
+#ifdef __CUDACC__
+__device__
+#endif
 static const Rgb RGB_WHITE = {255, 255, 255};
+
+#ifdef __CUDACC__
+__device__
+#endif
 static const Rgb RGB_BLACK = {0, 0, 0};
 
 #ifdef __CUDACC__

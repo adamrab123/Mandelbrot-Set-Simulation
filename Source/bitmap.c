@@ -43,18 +43,17 @@ Bitmap *Bitmap_init(int width, int height, const char *file_name) {
     // compute padding size (math magic)
     self->_padding_size = (4 - (width * BYTES_PER_PIXEL) % 4) % 4;
 
-    self->_file = NULL;
     bool write_headers = true;
 
     #ifdef PARALLEL
-    MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, self->_file);
+    self->_file;
+    MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &self->_file);
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     write_headers = (my_rank == 0);
     #else
     self->_file = fopen(file_name, "wb");
     #endif
-
 
     if (write_headers) {
         // create .bmp file headers
@@ -85,7 +84,7 @@ Bitmap *Bitmap_init(int width, int height, const char *file_name) {
  */
 void Bitmap_free(Bitmap *self) {
     #ifdef PARALLEL
-    MPI_File_close(self->_file);
+    MPI_File_close(&self->_file);
     #else
     fclose(self->_file);
     #endif
@@ -120,16 +119,31 @@ void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows
     long pixels_data_length = num_rows * ((self->width * BYTES_PER_PIXEL) + self->_padding_size);
     unsigned char pixels_data[pixels_data_length];
 
-    int index = 0;
-    for (int i = 0; i < num_rows; i++) {
-        for (int j = 0; j < self->width; j++) {
-
+    long index = 0;
+    for (long i = 0; i < num_rows; i++) {
+        for (long j = 0; j < self->width; j++) {
             // add pixel to array to be written
-            pixels_data[index]      = pixels[i][j].blue;
+            // printf("%s, %d\n", __FILE__, __LINE__);
+            unsigned char blue = pixels[i][j].blue;
+            // printf("%s, %d\n", __FILE__, __LINE__);
+            pixels_data[index]      = blue;
+            // printf("%s, %d\n", __FILE__, __LINE__);
+            unsigned char green = pixels[i][j].green;
+            // printf("%s, %d\n", __FILE__, __LINE__);
             pixels_data[index + 1]  = pixels[i][j].green;
+            // printf("%s, %d\n", __FILE__, __LINE__);
+            unsigned char red = pixels[i][j].red;
+            // printf("%s, %d\n", __FILE__, __LINE__);
             pixels_data[index + 2]  = pixels[i][j].red;
+            // printf("%s, %d\n", __FILE__, __LINE__);
 
             index += 3;
+
+            // // printf("red:");
+            // MPI_rank(&rank);
+            // if (rank == 0) {
+            //     // printf("");
+            // }
         }
 
         // add padding to end of row in array to be written
@@ -160,15 +174,15 @@ void _write_at_pixel(const Bitmap *self, long x, long y, const unsigned char *da
 void _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data) {
     // Both parallel and serial versions seek from the beginning of the file every time.
     #ifdef PARALLEL
-        MPI_File_write_at(*self->_file,
-                            offset,
-                            data,
-                            len_data,
-                            MPI_UNSIGNED_CHAR,
-                            NULL);
+    MPI_File_write_at(self->_file,
+                        offset,
+                        data,
+                        len_data,
+                        MPI_UNSIGNED_CHAR,
+                        NULL);
     #else
-        fseek(self->_file, offset, SEEK_SET);
-        fwrite(data, len_data, 1, self->_file);
+    fseek(self->_file, offset, SEEK_SET);
+    fwrite(data, len_data, 1, self->_file);
     #endif
 }
 

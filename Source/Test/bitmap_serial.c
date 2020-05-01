@@ -25,7 +25,7 @@ int main() {
         }
     }
     
-    printf("Image generated!\n");
+    // printf("Image generated!\n");
 
     return 0;
 }

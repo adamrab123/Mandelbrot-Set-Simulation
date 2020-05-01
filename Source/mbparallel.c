@@ -1,12 +1,12 @@
 #include "mbparallel.h"
 #include "args.h"
 #include "bitmap.h"
-#include "mandelbrot.h"
 
 // Cuda functions
 extern void cuda_init(int my_rank);
 extern void launch_mandelbrot_kernel(Rgb ** grid, long grid_width, long grid_height, long grid_offset_y, const Args *args);
 
+void _free_grid(Rgb **grid, long grid_width, long grid_height);
 long _get_y_offset(long grid_height);
 Rgb **_allocate_grid(long grid_width, long grid_height);
 
@@ -18,25 +18,40 @@ Rgb **_allocate_grid(long grid_width, long grid_height);
 void compute_mandelbrot_parallel(const Args *args) {
     MPI_Init(NULL, NULL);
 
+    // printf("%s, %d\n", __FILE__, __LINE__);
+
     int myrank, numranks;
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     cuda_init(myrank);
+    // printf("%s, %d\n", __FILE__, __LINE__);
 
     long grid_width, grid_height;
     Args_bitmap_dims(args, &grid_width, &grid_height);
+    // printf("%s, %d\n", __FILE__, __LINE__);
 
     Rgb **grid = _allocate_grid(grid_width, grid_height);
+    // printf("%s, %d\n", __FILE__, __LINE__);
 
     Bitmap *bitmap = Bitmap_init(grid_width, grid_height, args->output_file);
+    // printf("%s, %d\n", __FILE__, __LINE__);
 
     long grid_offset_y = _get_y_offset(grid_height);
+    // printf("%s, %d\n", __FILE__, __LINE__);
 
     launch_mandelbrot_kernel(grid, grid_width, grid_height, grid_offset_y, args);
+    // printf("%s, %d\n", __FILE__, __LINE__);
     MPI_Barrier(MPI_COMM_WORLD);
 
     Bitmap_write_rows(bitmap, grid, grid_offset_y, grid_height);
+    // printf("%s, %d\n", __FILE__, __LINE__);
+
+    _free_grid(grid, grid_width, grid_height);
+
+    Bitmap_free(bitmap);
+    // printf("%s, %d\n", __FILE__, __LINE__);
 
     MPI_Finalize();
+    // printf("%s, %d\n", __FILE__, __LINE__);
 }
 
 /**
@@ -51,14 +66,22 @@ Rgb **_allocate_grid(long grid_width, long grid_height){
     Rgb **grid = NULL;
 
     // allocate rows
-    grid = calloc(grid_width, sizeof(Rgb *)); 
+    grid = calloc(grid_height, sizeof(Rgb *)); 
 
     // allocate columns
-    for (long i = 0; i < grid_width; i++){
-        grid[i] = calloc(grid_height, sizeof(Rgb)); 
+    for (long i = 0; i < grid_height; i++){
+        grid[i] = calloc(grid_width, sizeof(Rgb)); 
     }
 
     return grid;
+}
+
+void _free_grid(Rgb **grid, long grid_width, long grid_height) {
+    for (long i = 0; i < grid_height; i++){
+        free(grid[i]);
+    }
+
+    free(grid);
 }
 
 /**

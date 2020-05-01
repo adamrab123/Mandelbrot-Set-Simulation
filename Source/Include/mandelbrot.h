@@ -1,19 +1,10 @@
 #ifndef MANDELBROT_H
 #define MANDELBROT_H
 
-#include<stdarg.h>
 #include<stdbool.h>
-#include <gmp.h>
-#include<mpfr.h>
-#include<mpc.h>
+#include "mbcomplex.h"
 
 // BEGIN TYPEDEFS
-
-typedef struct {
-    long long max_iters;
-    mpfr_prec_t prec;
-    mpfr_rnd_t rnd;
-} Mandelbrot;
 
 /**
  * @brief Contains information about a point c that has undergone some number of Mandelbrot set iterations.
@@ -21,11 +12,14 @@ typedef struct {
  * Fields are named based on the Mandelbrot set formula z = z_prev^2 + c.
  */
 typedef struct {
-    int iters_performed; /** The number of Mandelbrot iterations performed on @c c. */
-    mpc_t c; /** The imaginary number whose Mandelbrot info is contained in this struct. */
-    mpc_t z_final; /** The value of z after @c iters_performed iterations of @c c */
+    long iters_performed; /** The number of Mandelbrot iterations performed on @c c. */
+    long max_iters;
+    double c_real;
+    double c_imag;
+    double z_real;
+    double z_imag;
     bool diverged;
-    mpfr_t norm_iters;
+    double norm_iters;
 } MandelbrotPoint;
 
 // END TYPEDEFS
@@ -33,20 +27,6 @@ typedef struct {
 #ifdef __CUDACC__
 __host__ __device__
 #endif
-Mandelbrot *Mandelbrot_init(long long max_iters, mpfr_prec_t prec, mpfr_rnd_t rnd);
-#ifdef __CUDACC__
-__host__ __device__
-#endif
-void Mandelbrot_free(Mandelbrot *self);
-
-#ifdef __CUDACC__
-__host__ __device__
-#endif
-MandelbrotPoint *Mandelbrot_iterate(Mandelbrot *self, mpc_t c);
-
-#ifdef __CUDACC__
-__host__ __device__
-#endif
-void MandelbrotPoint_free(MandelbrotPoint *self);
+MandelbrotPoint *Mandelbrot_iterate(double c_real, double c_image, long iterations);
 
 #endif // MANDELBROT_H

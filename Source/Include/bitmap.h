@@ -22,7 +22,7 @@ typedef struct {
     int _padding_size;
 
     #ifdef PARALLEL
-    MPI_File *_file;
+    MPI_File _file;
     #else
     FILE *_file;
     #endif

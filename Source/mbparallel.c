@@ -1,6 +1,7 @@
 #include "mbparallel.h"
 #include "args.h"
 #include "bitmap.h"
+#include "mandelbrot.h"
 
 // Cuda functions
 extern void cuda_init(int my_rank);
@@ -41,6 +42,40 @@ void compute_mandelbrot_parallel(const Args *args) {
     Bitmap_free(bitmap);
 
     MPI_Finalize();
+}
+
+void compute_mandelbrot_serial(const Args *args) {
+    long px_width, px_height;
+    Args_bitmap_dims(args, &px_width, &px_height);
+
+    Bitmap *bitmap = Bitmap_init(px_width, px_height, args->output_file);
+
+    for (long y = 0; y < px_height; y++) {
+        Rgb **grid = _allocate_grid(px_width, 1);
+
+        for (long x = 0; x < px_width; x++) {
+            double c_real, c_imag;
+            Args_bitmap_to_complex(args, x, y, &c_real, &c_imag);
+            MandelbrotPoint *point = Mandelbrot_iterate(c_real, c_imag, args->iterations);
+
+            Rgb color;
+
+            if (point->diverged) {
+                color = ColorMap_hsv_based(point->norm_iters);
+            }
+            else {
+                color = RGB_BLACK;
+            }
+
+            grid[0][x] = color;
+            free(point);
+        }
+
+        Bitmap_write_rows(bitmap, grid, y, 1);
+        _free_grid(grid, px_width, 1);
+    }
+
+    Bitmap_free(bitmap);
 }
 
 /**

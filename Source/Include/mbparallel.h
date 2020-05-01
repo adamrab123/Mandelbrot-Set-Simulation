@@ -8,6 +8,7 @@
 #include<string.h>
 #include<mpi.h>
 
-void compute_mandelbrot_parallel();
+void compute_mandelbrot_parallel(const Args *args);
+void compute_mandelbrot_serial(const Args *args);
 
 #endif // MBMPI_H

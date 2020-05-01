@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <getopt.h>
 
@@ -13,13 +14,15 @@ Args *Args_init(int argc, char **argv) {
     self->step_size = 0.01;
 
     self->iterations = 100;
-    self->output_file = "output.bmp";
+    self->output_file = (char *)calloc(1, 100);
+    strcpy(self->output_file, "output.bmp");
     self->block_size = 4;
 
     return self;
 }
 
 void Args_free(Args *self) {
+    free(self->output_file);
     free(self);
 }
 

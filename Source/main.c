@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "args.h"
 
 int main(int argc, char **argv) {
@@ -13,4 +14,6 @@ int main(int argc, char **argv) {
     #endif
 
     Args_free(args);
+
+    return EXIT_SUCCESS;
 }

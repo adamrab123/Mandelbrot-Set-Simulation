@@ -17,25 +17,38 @@ Rgb **_allocate_grid(long grid_width, long grid_height);
 void compute_mandelbrot_parallel(const Args *args) {
     MPI_Init(NULL, NULL);
 
+    printf("%s, %d\n", __FILE__, __LINE__);
+
     int myrank, numranks;
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     cuda_init(myrank);
+    printf("%s, %d\n", __FILE__, __LINE__);
 
     long grid_width, grid_height;
     Args_bitmap_dims(args, &grid_width, &grid_height);
+    printf("%s, %d\n", __FILE__, __LINE__);
 
     Rgb **grid = _allocate_grid(grid_width, grid_height);
+    printf("%s, %d\n", __FILE__, __LINE__);
 
     Bitmap *bitmap = Bitmap_init(grid_width, grid_height, args->output_file);
+    printf("%s, %d\n", __FILE__, __LINE__);
 
     long grid_offset_y = _get_y_offset(grid_height);
+    printf("%s, %d\n", __FILE__, __LINE__);
 
     launch_mandelbrot_kernel(grid, grid_width, grid_height, grid_offset_y, args);
+    printf("%s, %d\n", __FILE__, __LINE__);
     MPI_Barrier(MPI_COMM_WORLD);
 
     Bitmap_write_rows(bitmap, grid, grid_offset_y, grid_height);
+    printf("%s, %d\n", __FILE__, __LINE__);
+
+    Bitmap_free(bitmap);
+    printf("%s, %d\n", __FILE__, __LINE__);
 
     MPI_Finalize();
+    printf("%s, %d\n", __FILE__, __LINE__);
 }
 
 /**

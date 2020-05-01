@@ -7,18 +7,20 @@ BUILD_DIR = Build
 EXE = -o ${BUILD_DIR}/mandelbrot
 
 # Use this locally.
-serial: $(wildcard Source/*.c) $(wildcard Source/Include*.h)
+serial:  $(wildcard Source/*.c) $(wildcard Source/Include*.h)
+		mkdir -p ${BUILD_DIR}
 		gcc ${GCC_FLAGS} ${INCLUDE} \
 			Source/bitmap.c Source/colormap.c Source/main.c \
-			Source/mbcomplex.c Source/args.c Source/mandelbrot.c Source/mbserial.c \
+			Source/mbcomplex.c Source/args.c Source/mandelbrot.c Source/balancer.c \
 			${EXE}
 
 # Use this on Aimos.
-parallel: $(wildcard Source/*.c) $(wildcard Source/*.cu) $(wildcard Source/*.h) 
+parallel: $(wildcard Source/*.c) $(wildcard Source/*.cu) $(wildcard Source/*.h)
+		mkdir -p ${BUILD_DIR}
         # Build mpi/non-cuda files to one object file each.
 		mpicc ${PARALLEL} ${GCC_FLAGS} -c ${INCLUDE} Source/bitmap.c -o ${BUILD_DIR}/bitmap.o
 		mpicc ${PARALLEL} ${GCC_FLAGS} -c ${INCLUDE} Source/main.c -o ${BUILD_DIR}/main.o
-		mpicc ${PARALLEL} ${GCC_FLAGS} -c ${INCLUDE} Source/mbparallel.c -o ${BUILD_DIR}/mbparallel.o
+		mpicc ${PARALLEL} ${GCC_FLAGS} -c ${INCLUDE} Source/balancer.c -o ${BUILD_DIR}/balancer.o
 		mpicc ${PARALLEL} ${GCC_FLAGS} -c ${INCLUDE} Source/args.c -o ${BUILD_DIR}/args_mpi.o
 
         # Build cuda files to one object file each.
@@ -44,7 +46,7 @@ parallel: $(wildcard Source/*.c) $(wildcard Source/*.cu) $(wildcard Source/*.h)
 		${BUILD_DIR}/args_cuda.o \
 		${BUILD_DIR}/bitmap.o \
 		${BUILD_DIR}/main.o \
-		${BUILD_DIR}/mbparallel.o \
+		${BUILD_DIR}/balancer.o \
 		${BUILD_DIR}/kernel.o \
 		${BUILD_DIR}/mandelbrot.o \
 		${BUILD_DIR}/mbcomplex.o \

@@ -1,16 +1,19 @@
-#include "mbparallel.h"
+#include "balancer.h"
 #include "args.h"
 #include "bitmap.h"
 #include "mandelbrot.h"
 
-// Cuda functions
+#ifdef PARALLEL
+// Cuda functions that only exist when kernel.cu is linked in parallel mode.
 extern void cuda_init(int my_rank);
 extern void launch_mandelbrot_kernel(Rgb ** grid, long grid_width, long grid_height, long grid_offset_y, const Args *args);
+#endif
 
 void _free_grid(Rgb **grid, long grid_width, long grid_height);
 long _get_y_offset(long grid_height);
 Rgb **_allocate_grid(long grid_width, long grid_height);
 
+#ifdef PARALLEL
 /**
  * @brief Starts the kernel with for each rank and assigns each rank a portion of the grid
  * 
@@ -43,6 +46,7 @@ void compute_mandelbrot_parallel(const Args *args) {
 
     MPI_Finalize();
 }
+#endif
 
 void compute_mandelbrot_serial(const Args *args) {
     long px_width, px_height;
@@ -108,6 +112,7 @@ void _free_grid(Rgb **grid, long grid_width, long grid_height) {
     free(grid);
 }
 
+#ifdef PARALLEL
 /**
  * @brief Calculate the y index in the bitmap image grid that this process should begin calculating.
  *
@@ -131,3 +136,4 @@ long _get_y_offset(long grid_height) {
 
     return offset;
 }
+#endif

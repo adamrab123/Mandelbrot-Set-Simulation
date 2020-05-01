@@ -46,11 +46,11 @@ parallel: $(wildcard Source/*.c) $(wildcard Source/*.cu) $(wildcard Source/*.h)
 		${BUILD_DIR}/args_cuda.o \
 		${BUILD_DIR}/bitmap.o \
 		${BUILD_DIR}/main.o \
+		${BUILD_DIR}/colormap.o \
+		${BUILD_DIR}/mbcomplex.o \
+		${BUILD_DIR}/mandelbrot.o \
 		${BUILD_DIR}/balancer.o \
 		${BUILD_DIR}/kernel.o \
-		${BUILD_DIR}/mandelbrot.o \
-		${BUILD_DIR}/mbcomplex.o \
-		${BUILD_DIR}/colormap.o \
 		${BUILD_DIR}/link.o \
 		${EXE} ${CUDA_LIBS}
 

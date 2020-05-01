@@ -48,6 +48,7 @@ void compute_mandelbrot_parallel(const Args *args) {
 }
 #endif
 
+#ifndef PARALLEL
 void compute_mandelbrot_serial(const Args *args) {
     long px_width, px_height;
     Args_bitmap_dims(args, &px_width, &px_height);
@@ -81,6 +82,7 @@ void compute_mandelbrot_serial(const Args *args) {
 
     Bitmap_free(bitmap);
 }
+#endif
 
 /**
  * @brief Allocates the grid of size @p grid_width by @p grid_height using cudaMallocManaged

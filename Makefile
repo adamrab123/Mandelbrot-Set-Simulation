@@ -1,4 +1,4 @@
-GCC_FLAGS = -std=c99 -Werror -lm
+GCC_FLAGS = -std=c99 -Werror -lm -g
 NVCC_FLAGS = -arch=sm_70
 INCLUDE = -I Source/Include
 CUDA_LIBS = -L/usr/local/cuda-10.1/lib64/ -lcudadevrt -lcudart -lstdc++

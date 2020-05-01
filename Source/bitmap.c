@@ -33,7 +33,7 @@ unsigned char *_create_bmp_info_header(const Bitmap *self);
  * @param file_type Designates Bitmap as setup for either a @c SERIAL or @c PARALLEL computation environment
  * @return @c Bitmap* The Bitmap object to be output
  */
-Bitmap *Bitmap_init(int num_rows, int num_cols, const char *file_name) {
+Bitmap *Bitmap_init(long num_rows, long num_cols, const char *file_name) {
     Bitmap *self = calloc(1, sizeof(Bitmap));
 
     self->width = num_cols;

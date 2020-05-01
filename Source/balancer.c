@@ -1,5 +1,3 @@
-#define PARALLEL
-
 #include "balancer.h"
 #include "args.h"
 #include "bitmap.h"
@@ -11,7 +9,7 @@ extern void cuda_init(int my_rank);
 extern void launch_mandelbrot_kernel(Rgb ** grid, long num_rows, long num_cols, long grid_offset_y, const Args *args);
 #endif
 
-void _free_grid(Rgb **grid, long num_rows, long num_cols);
+void _free_grid(Rgb **grid, long num_rows);
 long _get_start_row(long num_cols);
 Rgb **_allocate_grid(long num_rows, long num_cols);
 
@@ -42,7 +40,7 @@ void compute_mandelbrot_parallel(const Args *args) {
 
     Bitmap_write_rows(bitmap, grid, start_row, num_cols);
 
-    _free_grid(grid, num_rows, num_cols);
+    _free_grid(grid, num_rows);
 
     Bitmap_free(bitmap);
 
@@ -57,12 +55,13 @@ void compute_mandelbrot_serial(const Args *args) {
 
     Bitmap *bitmap = Bitmap_init(num_cols, num_rows, args->output_file);
 
-    for (long y = 0; y < num_rows; y++) {
-        Rgb **grid = _allocate_grid(num_cols, 1);
+    for (long row = 0; row < num_rows; row++) {
+        // Grid will be used to contain a single row.
+        Rgb **row_grid = _allocate_grid(1, num_cols);
 
-        for (long x = 0; x < num_cols; x++) {
+        for (long col = 0; col < num_cols; col++) {
             double c_real, c_imag;
-            Args_bitmap_to_complex(args, x, y, &c_real, &c_imag);
+            Args_bitmap_to_complex(args, row, col, &c_real, &c_imag);
             MandelbrotPoint *point = Mandelbrot_iterate(c_real, c_imag, args->iterations);
 
             Rgb color;
@@ -74,12 +73,12 @@ void compute_mandelbrot_serial(const Args *args) {
                 color = RGB_BLACK;
             }
 
-            grid[0][x] = color;
+            row_grid[0][col] = color;
             free(point);
         }
 
-        Bitmap_write_rows(bitmap, grid, y, 1);
-        _free_grid(grid, num_cols, 1);
+        Bitmap_write_rows(bitmap, row_grid, row, 1);
+        _free_grid(row_grid, 1);
     }
 
     Bitmap_free(bitmap);
@@ -98,17 +97,17 @@ Rgb **_allocate_grid(long num_rows, long num_cols){
     Rgb **grid = NULL;
 
     // allocate rows
-    grid = calloc(num_cols, sizeof(Rgb *)); 
+    grid = calloc(num_rows, sizeof(Rgb *)); 
 
     // allocate columns
-    for (long i = 0; i < num_cols; i++){
-        grid[i] = calloc(num_rows, sizeof(Rgb)); 
+    for (long i = 0; i < num_rows; i++){
+        grid[i] = calloc(num_cols, sizeof(Rgb)); 
     }
 
     return grid;
 }
 
-void _free_grid(Rgb **grid, long num_rows, long num_cols) {
+void _free_grid(Rgb **grid, long num_rows) {
     for (long i = 0; i < num_rows; i++){
         free(grid[i]);
     }

@@ -7,11 +7,31 @@
 
 Args *Args_init(int argc, char **argv) {
     Args *self = (Args *)malloc(sizeof(Args));
-    self->x_min = -2.1;
+
+    // self->x_min = -2.1;
+    // self->x_max = 1;
+    // self->y_min = -1.5;
+    // self->y_max = 1.5;
+
+    // Square image test.
+    // self->x_min = -2;
+    // self->x_max = 2;
+    // self->y_min = -2;
+    // self->y_max = 2;
+
+    // Wider image test.
+    // self->x_min = -2;
+    // self->x_max = 2;
+    // self->y_min = -1;
+    // self->y_max = 1;
+
+    // Taller image test.
+    self->x_min = -1;
     self->x_max = 1;
-    self->y_min = -1.5;
-    self->y_max = 1.5;
-    self->step_size = 0.001;
+    self->y_min = -2;
+    self->y_max = 2;
+
+    self->step_size = 0.01;
 
     self->iterations = 50;
     self->output_file = (char *)calloc(1, 100);
@@ -31,16 +51,16 @@ void Args_free(Args *self) {
 __host__ __device__
 #endif
 void Args_get_bitmap_dims(const Args *self, long *num_rows, long *num_cols) {
-    *num_rows = floor((self->y_max - self->y_min) / self->step_size);
-    *num_cols = floor((self->x_max - self->x_min) / self->step_size);
+    *num_rows = ceil((self->y_max - self->y_min) / self->step_size);
+    *num_cols = ceil((self->x_max - self->x_min) / self->step_size);
 }
 
 #ifdef __CUDACC__
 __host__ __device__
 #endif
 void Args_bitmap_to_complex(const Args *self, long row, long col, double *c_real, double *c_imag) {
-    *c_real = col * self->step_size + self->x_min;
-    *c_imag = row * self->step_size + self->y_min;
+    *c_real = (col * self->step_size) + self->x_min;
+    *c_imag = self->y_max - (row * self->step_size);
 }
 
 /**

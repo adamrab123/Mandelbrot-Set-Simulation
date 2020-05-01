@@ -15,8 +15,8 @@
 typedef struct {
     // Public
     char *image_file_name;
-    long height;
-    long width;
+    long num_rows;
+    long num_cols;
 
     // Private
     int _padding_size;

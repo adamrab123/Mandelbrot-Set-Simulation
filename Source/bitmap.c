@@ -123,27 +123,11 @@ void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows
     for (long i = 0; i < num_rows; i++) {
         for (long j = 0; j < self->width; j++) {
             // add pixel to array to be written
-            // printf("%s, %d\n", __FILE__, __LINE__);
-            unsigned char blue = pixels[i][j].blue;
-            // printf("%s, %d\n", __FILE__, __LINE__);
-            pixels_data[index]      = blue;
-            // printf("%s, %d\n", __FILE__, __LINE__);
-            unsigned char green = pixels[i][j].green;
-            // printf("%s, %d\n", __FILE__, __LINE__);
+            pixels_data[index]      = pixels[i][j].blue;
             pixels_data[index + 1]  = pixels[i][j].green;
-            // printf("%s, %d\n", __FILE__, __LINE__);
-            unsigned char red = pixels[i][j].red;
-            // printf("%s, %d\n", __FILE__, __LINE__);
             pixels_data[index + 2]  = pixels[i][j].red;
-            // printf("%s, %d\n", __FILE__, __LINE__);
 
             index += 3;
-
-            // // printf("red:");
-            // MPI_rank(&rank);
-            // if (rank == 0) {
-            //     // printf("");
-            // }
         }
 
         // add padding to end of row in array to be written

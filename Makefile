@@ -1,18 +1,10 @@
-GCC_FLAGS = -std=c99 -Werror -lm -g
+GCC_FLAGS = -std=c99 -Werror -lm
 NVCC_FLAGS = -arch=sm_70
 INCLUDE = -I Source/Include
 CUDA_LIBS = -L/usr/local/cuda-10.1/lib64/ -lcudadevrt -lcudart -lstdc++
 PARALLEL = -D PARALLEL
 BUILD_DIR = Build
 EXE = -o ${BUILD_DIR}/mandelbrot
-
-# Use this locally.
-serial:  $(wildcard Source/*.c) $(wildcard Source/Include*.h)
-		mkdir -p ${BUILD_DIR}
-		gcc ${GCC_FLAGS} ${INCLUDE} \
-			Source/bitmap.c Source/colormap.c Source/main.c \
-			Source/mbcomplex.c Source/args.c Source/mandelbrot.c Source/balancer.c \
-			${EXE}
 
 # Use this on Aimos.
 parallel: $(wildcard Source/*.c) $(wildcard Source/*.cu) $(wildcard Source/*.h)
@@ -53,6 +45,21 @@ parallel: $(wildcard Source/*.c) $(wildcard Source/*.cu) $(wildcard Source/*.h)
 		${BUILD_DIR}/kernel.o \
 		${BUILD_DIR}/link.o \
 		${EXE} ${CUDA_LIBS}
+
+# Use this locally.
+serial: $(wildcard Source/*.c) $(wildcard Source/Include*.h)
+		mkdir -p ${BUILD_DIR}
+		gcc ${GCC_FLAGS} ${INCLUDE} \
+			Source/bitmap.c Source/colormap.c Source/main.c \
+			Source/mbcomplex.c Source/args.c Source/mandelbrot.c Source/balancer.c \
+			${EXE}
+
+debug-serial: GCC_FLAGS += -g
+debug-serial: serial
+
+debug-parallel: NVCC_FLAGS += -gG
+debug-parallel: GCC_FLAGS += -g
+debug-parallel: parallel
 
 clean:
 	rm ${BUILD_DIR}/*

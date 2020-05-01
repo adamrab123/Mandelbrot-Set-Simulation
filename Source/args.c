@@ -11,9 +11,9 @@ Args *Args_init(int argc, char **argv) {
     self->x_max = 1;
     self->y_min = -1.5;
     self->y_max = 1.5;
-    self->step_size = 0.01;
+    self->step_size = 0.001;
 
-    self->iterations = 100;
+    self->iterations = 50;
     self->output_file = (char *)calloc(1, 100);
     strcpy(self->output_file, "output.bmp");
     self->block_size = 4;

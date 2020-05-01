@@ -1,5 +1,6 @@
 Build/*
 **/*.out
+**/*.bmp
 **/*.swp
 .ipynb_checkpoints/*
 .vscode

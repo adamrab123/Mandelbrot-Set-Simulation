@@ -6,6 +6,7 @@
 extern void cuda_init(int my_rank);
 extern void launch_mandelbrot_kernel(Rgb ** grid, long grid_width, long grid_height, long grid_offset_y, const Args *args);
 
+void _free_grid(Rgb **grid, long grid_width, long grid_height);
 long _get_y_offset(long grid_height);
 Rgb **_allocate_grid(long grid_width, long grid_height);
 
@@ -44,6 +45,8 @@ void compute_mandelbrot_parallel(const Args *args) {
     Bitmap_write_rows(bitmap, grid, grid_offset_y, grid_height);
     printf("%s, %d\n", __FILE__, __LINE__);
 
+    _free_grid(grid, grid_width, grid_height);
+
     Bitmap_free(bitmap);
     printf("%s, %d\n", __FILE__, __LINE__);
 
@@ -63,14 +66,22 @@ Rgb **_allocate_grid(long grid_width, long grid_height){
     Rgb **grid = NULL;
 
     // allocate rows
-    grid = calloc(grid_width, sizeof(Rgb *)); 
+    grid = calloc(grid_height, sizeof(Rgb *)); 
 
     // allocate columns
-    for (long i = 0; i < grid_width; i++){
-        grid[i] = calloc(grid_height, sizeof(Rgb)); 
+    for (long i = 0; i < grid_height; i++){
+        grid[i] = calloc(grid_width, sizeof(Rgb)); 
     }
 
     return grid;
+}
+
+void _free_grid(Rgb **grid, long grid_width, long grid_height) {
+    for (long i = 0; i < grid_height; i++){
+        free(grid[i]);
+    }
+
+    free(grid);
 }
 
 /**

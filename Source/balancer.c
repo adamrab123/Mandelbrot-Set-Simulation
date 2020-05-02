@@ -41,11 +41,22 @@ void compute_mandelbrot_parallel(const Args *args) {
     long start_row, end_row;
     _get_row_range(bitmap, &start_row, &end_row);
     long grid_rows = end_row - start_row;
+    long grid_cols = bitmap_cols;
 
-    Rgb **grid = _allocate_grid(grid_rows, bitmap_cols);
+    Rgb **grid = _allocate_grid(grid_rows, grid_cols);
 
-    launch_mandelbrot_kernel(grid, start_row, grid_rows, bitmap_cols, args);
+    launch_mandelbrot_kernel(grid, start_row, grid_rows, grid_cols, args);
     MPI_Barrier(MPI_COMM_WORLD);
+
+    printf("writing %ld rows starting at row %ld\n", grid_rows, start_row);
+
+    for (int row = 0; row < grid_rows; row++) {
+        for (int col = 0; col < grid_cols; col++) {
+            Rgb color = grid[row][col];
+            printf("(row, col): (%d, %d) %u %u %u\n", row, col, color.red, color.green, color.blue);
+        }
+        printf("\n");
+    }
 
     int result = Bitmap_write_rows(bitmap, grid, start_row, grid_rows);
 

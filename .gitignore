@@ -6,3 +6,4 @@ Build/*
 .vscode
 # Ignore my sync script.
 sync*
+output/*

@@ -1,6 +1,8 @@
 # Mandelbrot Set Simulation
 
-![](image.gif)
+<p align="center">   <img width="460" height="300" src=image.gif> </p>
+
+
 
 - Overleaf document: https://www.overleaf.com/2373935774gwqzxqfbdqkf
 

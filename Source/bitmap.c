@@ -180,7 +180,7 @@ int _write_at(const Bitmap *self, long offset, const unsigned char *data, long l
     #ifdef PARALLEL
     int result = MPI_File_write_at(self->_file, offset, data, len_data, MPI_UNSIGNED_CHAR, NULL);
 
-    if (result != MPI_Success) {
+    if (result != MPI_SUCCESS) {
         return 1;
     }
     #else

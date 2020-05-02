@@ -64,62 +64,82 @@ Args *Args_init(int argc, char **argv) {
 
         switch (c)
         {
-        case 0:
-            /* If this option set a flag, do nothing else now. */
-            if (long_options[option_index].flag != 0)
+            case 0:
+            {
+                /* If this option set a flag, do nothing else now. */
+                if (long_options[option_index].flag != 0)
+                    break;
+                printf("option %s", long_options[option_index].name);
+                if (optarg)
+                    printf(" with arg %s", optarg);
+                printf("\n");
                 break;
-            printf("option %s", long_options[option_index].name);
-            if (optarg)
-                printf(" with arg %s", optarg);
-            printf("\n");
-            break;
-
-        case 'x':
-            printf("x_min set to: %s\n", optarg);
-            x_min = atoi(optarg);
-            break;
-        case 'X':
-            printf("x_max set to: %s\n", optarg);
-            x_max = atoi(optarg);
-            break;
-        case 'y':
-            printf("y_min set to: %s\n", optarg);
-            y_min = atoi(optarg);
-            break;
-        case 'Y':
-            printf("y_max set to: %s\n", optarg);
-            y_max = atoi(optarg);
-            break;
-        case 's':
-            printf("steps set to: %s\n", optarg);
-            // the steps conversion requirs adding a null byte
-            //      to the end of the array before converting
-            int length = sizeof(optarg) / sizeof(optarg[0]);
-            char *word = calloc(length + 1, sizeof(char));
-            strcpy(word, optarg);
-            word[length] = '\0';
-            // printf("Converted word = %s\n", word);
-            steps = atof(word);
-            break;
-        case 'i':
-            printf("iteratios set to: %s\n", optarg);
-            iterations = atoi(optarg);
-            break;
-        case 'o':
-            printf("output_file set to: %s\n", optarg);
-            output_file = optarg;
-            break;
-        case 'b':
-            printf("block_size set to: %s\n", optarg);
-            block_size = atoi(optarg);
-            break;
-        case 'c':
-            printf("chunk set to: %s\n", optarg);
-            chunk = atoi(optarg);
-            break;
-
-        default:
-            abort();
+            }
+            case 'x':
+            {
+                printf("x_min set to: %s\n", optarg);
+                x_min = atoi(optarg);
+                break;
+            }
+            case 'X':
+            {
+                printf("x_max set to: %s\n", optarg);
+                x_max = atoi(optarg);
+                break;
+            }
+            case 'y':
+            {
+                printf("y_min set to: %s\n", optarg);
+                y_min = atoi(optarg);
+                break;
+            }
+            case 'Y':
+            {
+                printf("y_max set to: %s\n", optarg);
+                y_max = atoi(optarg);
+                break;
+            }
+            case 's':
+            {
+                printf("steps set to: %s\n", optarg);
+                // the steps conversion requirs adding a null byte
+                //      to the end of the array before converting
+                int length = sizeof(optarg) / sizeof(optarg[0]);
+                char *word = (char*)calloc(length + 1, sizeof(char));
+                strcpy(word, optarg);
+                word[length] = '\0';
+                // printf("Converted word = %s\n", word);
+                steps = atof(word);
+                break;
+            }
+            case 'i':
+            {
+                printf("iteratios set to: %s\n", optarg);
+                iterations = atoi(optarg);
+                break;
+            }
+            case 'o':
+            {
+                printf("output_file set to: %s\n", optarg);
+                output_file = optarg;
+                break;
+            }
+            case 'b':
+            {
+                printf("block_size set to: %s\n", optarg);
+                block_size = atoi(optarg);
+                break;
+            }
+            case 'c':
+            {
+                printf("chunk set to: %s\n", optarg);
+                chunk = atoi(optarg);
+                break;
+            }
+            default:
+            {
+                abort();
+            }
         }
     }
 

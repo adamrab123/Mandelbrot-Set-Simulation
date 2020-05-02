@@ -87,16 +87,16 @@ void Args_bitmap_to_complex(const Args *self, long row, long col, double *c_real
 Args *get_args(int argc, char **argv) { 
 
     // setting all parameters to their default values
-    int x_min = -2;
-    int x_max = 2;
-    int y_min = -2;
-    int y_max = 2;
-    float steps = 0.1;
-    int iterations = 20;
+    double x_min = -2.1;
+    double x_max = 1;
+    double y_min = -1.5;
+    double y_max = 1.5;
+    double steps = 0.01;
+    long iterations = 100;
     char* output_file = (char *)calloc(1, 100);
     strcpy(output_file, "output.bmp");
     int block_size = 100;
-    int chunk;
+    int chunk = 1;
 
     int c;
     // defining what parameters getopt needs to look for

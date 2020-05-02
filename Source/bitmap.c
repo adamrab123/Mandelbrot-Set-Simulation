@@ -44,6 +44,8 @@ Bitmap *Bitmap_init(long num_rows, long num_cols, const char *file_name) {
 
     bool write_headers = true;
 
+    // Open file in write, binary append mode.
+    // Existing file of the same name will be deleted.
     #ifdef PARALLEL
     self->_file;
     MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &self->_file);
@@ -51,7 +53,7 @@ Bitmap *Bitmap_init(long num_rows, long num_cols, const char *file_name) {
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     write_headers = (my_rank == 0);
     #else
-    self->_file = fopen(file_name, "wb");
+    self->_file = fopen(file_name, "wb+");
     #endif
 
     if (write_headers) {
@@ -61,22 +63,7 @@ Bitmap *Bitmap_init(long num_rows, long num_cols, const char *file_name) {
 
         _write_at(self, 0, file_header, FILE_HEADER_SIZE);
         _write_at(self, FILE_HEADER_SIZE, info_header, INFO_HEADER_SIZE);
-
-        // write temp data and padding to each file row
-        unsigned char temp_data[self->num_cols * BYTES_PER_PIXEL];
-        memset(temp_data, 255, self->num_cols * BYTES_PER_PIXEL); // blank (white) image
-
-        for (int i = 0; i < self->num_rows; i++) {
-            // Put padding and whitespace filler in every row.
-            _write_at_pixel(self, 0, i, temp_data, BYTES_PER_PIXEL * self->num_cols);
-            _write_at_pixel(self, self->num_cols - 1, i, PADDING, self->_padding_size);
-        }
     }
-
-    #ifdef PARALLEL
-    // Make sure that no process begins computation before the image structure is outlined.
-    MPI_Barrier();
-    #endif
 
     return self;
 }

@@ -9,10 +9,16 @@ Args *Args_init(int argc, char **argv) {
     Args *self = (Args *)malloc(sizeof(Args));
 
     // Normal viewpoint.
-    self->x_min = -2.1;
-    self->x_max = 1;
-    self->y_min = -1.5;
-    self->y_max = 1.5;
+    // self->x_min = -2.1;
+    // self->x_max = 1;
+    // self->y_min = -1.5;
+    // self->y_max = 1.5;
+
+    // Test top right quadrant only.
+    self->x_min = 0;
+    self->x_max = 2;
+    self->y_min = 0;
+    self->y_max = 2; 
 
     // Square image test.
     // self->x_min = -2;

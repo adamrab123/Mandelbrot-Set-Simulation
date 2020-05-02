@@ -48,7 +48,7 @@ Bitmap *Bitmap_init(long num_rows, long num_cols, const char *file_name) {
     // Existing file of the same name will be deleted.
     #ifdef PARALLEL
     self->_file;
-    int result = MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &self->_file);
+    int result = MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &self->_file);
 
     if (result != MPI_SUCCESS) {
         return NULL;

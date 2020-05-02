@@ -18,8 +18,8 @@ const int INFO_HEADER_SIZE = 40; // format-required
 const unsigned char PADDING[3] = {0,0,0}; // .bmp format padding array
 
 // Function declarations
-void _write_at_pixel(const Bitmap *self, long row, long col, const unsigned char *data, long data_len);
-void _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data);
+int _write_at_pixel(const Bitmap *self, long row, long col, const unsigned char *data, long data_len);
+int _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data);
 unsigned char *_create_bmp_file_header(const Bitmap *self);
 unsigned char *_create_bmp_info_header(const Bitmap *self);
 
@@ -31,7 +31,7 @@ unsigned char *_create_bmp_info_header(const Bitmap *self);
  * @param num_cols Width of the image in pixels.
  * @param image_file_name Output file name
  * @param file_type Designates Bitmap as setup for either a @c SERIAL or @c PARALLEL computation environment
- * @return @c Bitmap* The Bitmap object to be output
+ * @return @c Bitmap* The Bitmap object to be output, or NULL if the file could not be created.
  */
 Bitmap *Bitmap_init(long num_rows, long num_cols, const char *file_name) {
     Bitmap *self = calloc(1, sizeof(Bitmap));
@@ -48,12 +48,21 @@ Bitmap *Bitmap_init(long num_rows, long num_cols, const char *file_name) {
     // Existing file of the same name will be deleted.
     #ifdef PARALLEL
     self->_file;
-    MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &self->_file);
+    int result = MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &self->_file);
+
+    if (result != MPI_SUCCESS) {
+        return NULL;
+    }
+
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     write_headers = (my_rank == 0);
     #else
     self->_file = fopen(file_name, "wb+");
+
+    if (self->_file == NULL) {
+        return NULL;
+    }
     #endif
 
     if (write_headers) {
@@ -61,26 +70,41 @@ Bitmap *Bitmap_init(long num_rows, long num_cols, const char *file_name) {
         unsigned char* file_header = _create_bmp_file_header(self);
         unsigned char* info_header = _create_bmp_info_header(self);
 
-        _write_at(self, 0, file_header, FILE_HEADER_SIZE);
-        _write_at(self, FILE_HEADER_SIZE, info_header, INFO_HEADER_SIZE);
+        int status1 = _write_at(self, 0, file_header, FILE_HEADER_SIZE);
+        int status2 = _write_at(self, FILE_HEADER_SIZE, info_header, INFO_HEADER_SIZE);
+
+        if (status1 != 0 || status2 != 0) {
+            return NULL;
+        }
     }
 
     return self;
 }
 
 /**
- * @brief Bitmap destructor
+ * @brief Bitmap destructor.
  * 
  * @param self Bitmap object to be removed from memory
+ * @return 0 on successful file closing, 1 otherwise.
  */
-void Bitmap_free(Bitmap *self) {
+int Bitmap_free(Bitmap *self) {
     #ifdef PARALLEL
-    MPI_File_close(&self->_file);
+    int result = MPI_File_close(&self->_file);
+
+    if (result != MPI_SUCCESS) {
+        return 1;
+    }
     #else
-    fclose(self->_file);
+    int result = fclose(self->_file);
+
+    if (result != 0) {
+        return 1;
+    }
     #endif
 
     free(self);
+
+    return 0;
 }
 
 /**
@@ -91,10 +115,10 @@ void Bitmap_free(Bitmap *self) {
  * @param row The row if the pixel, indexed from top left corner.
  * @param col The column of the pixel, indexed from top left corner.
  */
-void Bitmap_write_pixel(Bitmap *self, Rgb pixel, long row, long col) {
+int Bitmap_write_pixel(Bitmap *self, Rgb pixel, long row, long col) {
     unsigned char pixel_data[3] = {pixel.blue, pixel.green, pixel.red};
 
-    _write_at_pixel(self, row, col, pixel_data, sizeof(pixel_data));
+    return _write_at_pixel(self, row, col, pixel_data, sizeof(pixel_data));
 }
 
 /**
@@ -105,7 +129,7 @@ void Bitmap_write_pixel(Bitmap *self, Rgb pixel, long row, long col) {
  * @param num_rows Number of pixel rows
  * @param start_row The pixel row index to start writing at, with origin in the top left corner.
  */
-void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows) {
+int Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows) {
     // compute padding needed and size of array to be written
     long pixels_data_length = num_rows * ((self->num_cols * BYTES_PER_PIXEL) + self->_padding_size);
     unsigned char pixels_data[pixels_data_length];
@@ -128,7 +152,7 @@ void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows
         }
     }
 
-    _write_at_pixel(self, start_row, 0, pixels_data, pixels_data_length);
+    return _write_at_pixel(self, start_row, 0, pixels_data, pixels_data_length);
 }
 
 // Private methods
@@ -141,28 +165,34 @@ void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows
  * @param x X coordinate of the pixel with origin in the bottom left corner.
  * @param y Y coordinate of the pixel with origin in the bottom left corner.
  */
-void _write_at_pixel(const Bitmap *self, long row, long col, const unsigned char *data, long data_len) {
+int _write_at_pixel(const Bitmap *self, long row, long col, const unsigned char *data, long data_len) {
     // Rows and columns (origin in top left) are converted to bitmap x and y (origin in bottom left).
     long x = col;
     long y = self->num_rows - (row + 1);
 
     long pixel_offset = FILE_HEADER_SIZE + INFO_HEADER_SIZE + (y * (self->num_cols * BYTES_PER_PIXEL + self->_padding_size)) + (x * BYTES_PER_PIXEL);
-    _write_at(self, pixel_offset, data, data_len);
+
+    return  _write_at(self, pixel_offset, data, data_len);
 }
 
-void _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data) {
+int _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data) {
     // Both parallel and serial versions seek from the beginning of the file every time.
     #ifdef PARALLEL
-    MPI_File_write_at(self->_file,
-                        offset,
-                        data,
-                        len_data,
-                        MPI_UNSIGNED_CHAR,
-                        NULL);
+    int result = MPI_File_write_at(self->_file, offset, data, len_data, MPI_UNSIGNED_CHAR, NULL);
+
+    if (result != MPI_Success) {
+        return 1;
+    }
     #else
-    fseek(self->_file, offset, SEEK_SET);
-    fwrite(data, len_data, 1, self->_file);
+    int result1 = fseek(self->_file, offset, SEEK_SET);
+    int result2 = fwrite(data, len_data, 1, self->_file);
+
+    if (result1 != 0 || result2 != 0) {
+        return 1;
+    }
     #endif
+
+    return 0;
 }
 
 /**

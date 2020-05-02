@@ -29,9 +29,9 @@ typedef struct {
 } Bitmap;
 
 Bitmap *Bitmap_init(long num_rows, long num_cols, const char *image_file_name);
-void Bitmap_free(Bitmap *self);
+int Bitmap_free(Bitmap *self);
 
-void Bitmap_write_pixel(Bitmap *self, Rgb pixel, long row, long col);
-void Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows);
+int Bitmap_write_pixel(Bitmap *self, Rgb pixel, long row, long col);
+int Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows);
 
 #endif

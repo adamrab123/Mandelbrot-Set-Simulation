@@ -9,6 +9,8 @@
 #include "mandelbrot.h"
 #include "args.h"
 #include "colormap.h"
+// The corresponding kernel.h header file exports the host functions declared here.
+// It should not be included in this file.
 
 /**
  * @brief Iterates on grid to generate mandelbrot set points

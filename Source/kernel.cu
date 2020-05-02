@@ -23,7 +23,7 @@ __global__ void _mandelbrot_kernel(Rgb **grid, long start_row, long num_rows, lo
     for(; index < num_cols * num_rows; index += stride) {
         // Row and col in this process's grid.
         long row = index / num_cols;
-        long col = index % num_rows;
+        long col = index % num_cols;
 
         // Add the start_row to row so that we get the exact mandelbrot coordinates from the whole image.
         double c_real, c_imag;

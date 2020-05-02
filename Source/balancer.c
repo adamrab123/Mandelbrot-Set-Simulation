@@ -31,9 +31,11 @@ void compute_mandelbrot_parallel(const Args *args) {
     long bitmap_rows, bitmap_cols;
     Args_get_bitmap_dims(args, &bitmap_rows, &bitmap_cols);
 
-    // printf("%s: %d\n", __FILE__, __LINE__);
     Bitmap *bitmap = Bitmap_init(bitmap_rows, bitmap_cols, args->output_file);
-    // printf("%s: %d\n", __FILE__, __LINE__);
+    if (bitmap == NULL) {
+        fprintf(stderr, "Error opening file %s\n", args->output_file);
+        exit(EXIT_FAILURE);
+    }
 
     // Start inclusive, end exclusive.
     long start_row, end_row;
@@ -42,24 +44,10 @@ void compute_mandelbrot_parallel(const Args *args) {
 
     Rgb **grid = _allocate_grid(grid_rows, bitmap_cols);
 
-    if (bitmap == NULL) {
-        fprintf(stderr, "Error opening file %s\n", args->output_file);
-        exit(EXIT_FAILURE);
-    }
-
-    if (bitmap == NULL) {
-        fprintf(stderr, "Error opening file %s\n", args->output_file);
-        exit(EXIT_FAILURE);
-    }
-
-    // printf("%s: %d\n", __FILE__, __LINE__);
-
     launch_mandelbrot_kernel(grid, start_row, grid_rows, bitmap_cols, args);
     MPI_Barrier(MPI_COMM_WORLD);
-    printf("%s: %d\n", __FILE__, __LINE__);
 
     int result = Bitmap_write_rows(bitmap, grid, start_row, grid_rows);
-    printf("%s: %d\n", __FILE__, __LINE__);
 
     if (result != 0) {
         fprintf(stderr, "Error writing to file %s\n", args->output_file);
@@ -67,7 +55,6 @@ void compute_mandelbrot_parallel(const Args *args) {
     }
 
     _free_grid(grid, grid_rows);
-    printf("%s: %d\n", __FILE__, __LINE__);
 
     result = Bitmap_free(bitmap);
 
@@ -186,5 +173,7 @@ void _get_row_range(Bitmap *bitmap, long *start_row, long *end_row) {
         *start_row = bitmap->num_rows - remainder;
         *end_row = *start_row + remainder;
     }
+
+    printf("rank: %d start row: %ld end row: %ld\n", my_rank, *start_row, *end_row);
 }
 #endif

@@ -47,15 +47,21 @@ Bitmap *Bitmap_init(long num_rows, long num_cols, const char *file_name) {
     // Open file in write, binary append mode.
     // Existing file of the same name will be deleted.
     #ifdef PARALLEL
-    int result = MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &self->_file);
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+    if (my_rank == 0) {
+        write_headers = true;
+        remove(file_name);
+    }
+    // Make sure any conflicting file is removed before a process tries to open it.
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    int result = MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_CREATE | MPI_MODE_WRONLY | MPI_MODE_APPEND, MPI_INFO_NULL, &self->_file);
 
     if (result != MPI_SUCCESS) {
         return NULL;
     }
-
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    write_headers = (my_rank == 0);
     #else
     self->_file = fopen(file_name, "wb+");
 
@@ -132,33 +138,25 @@ int Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long rows_to_w
     // compute padding needed and size of array to be written
     long pixels_data_length = rows_to_write * ((self->num_cols * BYTES_PER_PIXEL) + self->_padding_size);
     unsigned char pixels_data[pixels_data_length];
-    printf("%s: %d\n", __FILE__, __LINE__);
 
     long index = 0;
     for (long row = 0; row < rows_to_write; row++) {
         for (long col = 0; col < self->num_cols; col++) {
-            printf("top index: %ld\n", index);
-            printf("top rgb: [%u, %u, %u]\n", pixels[row][col].blue, pixels[row][col].green, pixels[row][col].red);
-
             // add pixel to array to be written
             pixels_data[index]      = pixels[row][col].blue;
             pixels_data[index + 1]  = pixels[row][col].green;
             pixels_data[index + 2]  = pixels[row][col].red;
 
-            printf("bottom index: %ld\n", index);
-            printf("bottom rgb: [%u, %u, %u]\n", pixels[row][col].blue, pixels[row][col].green, pixels[row][col].red);
-
             index += 3;
         }
 
         // add padding to end of row in array to be written
-        // for (int k = 0; k < self->_padding_size; k++) {
-        //     pixels_data[index] = PADDING[0];
-        //     index++;
-        // }
+        for (int k = 0; k < self->_padding_size; k++) {
+            pixels_data[index] = PADDING[0];
+            index++;
+        }
     }
 
-    printf("%s: %d\n", __FILE__, __LINE__);
     return _write_at_pixel(self, start_row, 0, pixels_data, pixels_data_length);
 }
 

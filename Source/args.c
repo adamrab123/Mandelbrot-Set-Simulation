@@ -28,7 +28,7 @@ Args *Args_init(int argc, char **argv) {
     long iterations = 100;
     char *output_file = (char *)calloc(100, sizeof(char));
     strcpy(output_file, "output.bmp");
-    int block_size = 100;
+    int block_size = 1;
     int chunk = 1;
 
     int c;

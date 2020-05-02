@@ -1,6 +1,6 @@
 # Mandelbrot Set Simulation
 
-<p align="center">   <img width="460" height="300" src=image.gif> </p>
+<p align="center">   <img src=image.gif> </p>
 
 
 

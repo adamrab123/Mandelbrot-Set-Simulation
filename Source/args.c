@@ -1,3 +1,5 @@
+#include<ctype.h>
+#include<stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -19,158 +21,152 @@
  * @return An @c Arguments instance with user provided parameter inputts
  */
 Args *Args_init(int argc, char **argv) {
-    // setting all parameters to their default values
-    double x_min = -2.1;
-    double x_max = 1;
-    double y_min = -1.5;
-    double y_max = 1.5;
-    double steps = 0.01;
-    long iterations = 100;
-    char *output_file = (char *)calloc(100, sizeof(char));
-    strcpy(output_file, "output.bmp");
-    int block_size = 1;
-    int chunk = 1;
+    Args *self = (Args *)malloc(sizeof(Args));
+
+    // Set all parameters to their default values.
+    self->x_min = -2.1;
+    self->x_max = 1;
+    self->y_min = -1.5;
+    self->y_max = 1.5;
+    self->step_size = 0.01;
+    self->iterations = 100;
+    self->output_file = (char *)calloc(100, sizeof(char));
+    strcpy(self->output_file, "output.bmp");
+    self->block_size = 1;
+    self->chunks = 1;
 
     int c;
-    // defining what parameters getopt needs to look for
-    while (1)
-    {
-        static struct option long_options[] =
-            {
-                /* These options set a flag. */
-                // {"verbose", no_argument,       &verbose_flag, 1},
-                // {"brief",   no_argument,       &verbose_flag, 0},
-                /* These options don’t set a flag.
-             We distinguish them by their indices. */
-                {"x-min", required_argument, 0, 'x'},
-                {"x-max", required_argument, 0, 'X'},
-                {"y-min", required_argument, 0, 'y'},
-                {"y-max", required_argument, 0, 'Y'},
-                {"step-size", required_argument, 0, 's'},
-                {"output-file", required_argument, 0, 'o'},
-                {"block-size", required_argument, 0, 'b'},
-                {"iterations", required_argument, 0, 'i'},
-                {"chunk", required_argument, 0, 'c'},
-                {0, 0, 0, 0}};
-        /* getopt_long stores the option index here. */
+    bool parse_error = false;
+
+    while (1) {
+        static struct option long_options[] = {
+            // These options don’t set a flag.
+            // We distinguish them by their indices.
+            {"x-min", required_argument, 0, 'x'},
+            {"x-max", required_argument, 0, 'X'},
+            {"y-min", required_argument, 0, 'y'},
+            {"y-max", required_argument, 0, 'Y'},
+            {"step-size", required_argument, 0, 's'},
+            {"output-file", required_argument, 0, 'o'},
+            {"block-size", required_argument, 0, 'b'},
+            {"iterations", required_argument, 0, 'i'},
+            {"chunks", required_argument, 0, 'c'},
+            {0, 0, 0, 0}
+        };
         int option_index = 0;
 
         c = getopt_long(argc, argv, ":x:X:y:Y:s:o:b:i:c:lx",
                         long_options, &option_index);
 
-        /* Detect the end of the options. */
-        if (c == -1)
+        // Detect the end of the options.
+        if (c == -1) {
             break;
+        }
 
         switch (c)
         {
-            case 0:
-            {
-                /* If this option set a flag, do nothing else now. */
-                if (long_options[option_index].flag != 0)
-                    break;
-                printf("option %s", long_options[option_index].name);
-                if (optarg)
-                    printf(" with arg %s", optarg);
-                printf("\n");
+            case 0: {
+                // For long options without a corresponding short option.
+                // We do not have any of these, so do nothing.
                 break;
             }
-            case 'x':
-            {
-                printf("x_min set to: %s\n", optarg);
-                x_min = atoi(optarg);
+            case 'x': {
+                self->x_min = atof(optarg);
                 break;
             }
-            case 'X':
-            {
-                printf("x_max set to: %s\n", optarg);
-                x_max = atoi(optarg);
+            case 'X': {
+                self->x_max = atof(optarg);
                 break;
             }
-            case 'y':
-            {
-                printf("y_min set to: %s\n", optarg);
-                y_min = atoi(optarg);
+            case 'y': {
+                self->y_min = atof(optarg);
                 break;
             }
-            case 'Y':
-            {
-                printf("y_max set to: %s\n", optarg);
-                y_max = atoi(optarg);
+            case 'Y': {
+                self->y_max = atof(optarg);
                 break;
             }
-            case 's':
-            {
-                printf("steps set to: %s\n", optarg);
-                // the steps conversion requirs adding a null byte
-                //      to the end of the array before converting
+            case 's': {
+                // The steps conversion requires adding a null byte to the end of the array before converting
                 int length = sizeof(optarg) / sizeof(optarg[0]);
                 char *word = (char*)calloc(length + 1, sizeof(char));
                 strcpy(word, optarg);
                 word[length] = '\0';
-                // printf("Converted word = %s\n", word);
-                steps = atof(word);
+                self->step_size = atof(word);
                 break;
             }
-            case 'i':
-            {
-                printf("iteratios set to: %s\n", optarg);
-                iterations = atoi(optarg);
+            case 'i': {
+                self->iterations = atof(optarg);
                 break;
             }
-            case 'o':
-            {
-                printf("output_file set to: %s\n", optarg);
-                output_file = optarg;
+            case 'o': {
+                self->output_file = optarg;
                 break;
             }
-            case 'b':
-            {
-                printf("block_size set to: %s\n", optarg);
-                block_size = atoi(optarg);
+            case 'b': {
+                self->block_size = atof(optarg);
                 break;
             }
-            case 'c':
-            {
-                printf("chunk set to: %s\n", optarg);
-                chunk = atoi(optarg);
+            case 'c': {
+                self->chunks = atof(optarg);
                 break;
             }
-            default:
-            {
-                abort();
+            case '?': {
+                // if (optopt == 'c') {
+                //     fprintf(stderr, "Option -%c requires an argument\n", optopt);
+                // }
+                // else if (isprint(optopt)) {
+                //     // If the character entered is printable, display it back to the user.
+                //     fprintf(stderr, "Unknown option '-%c'\n", optopt);
+                // }
+                // else {
+                //     // Print the hex code of the character if it is not printable.
+                //     fprintf(stderr, "Unknown option character '\\x%x'\n", optopt);
+                // }
+
+                fprintf(stderr, "Unknown option '%s'\n", argv[optind - 1]);
+                // if (isprint(optopt)) {
+                //     // If the character entered is printable, display it back to the user.
+                //     fprintf(stderr, "Unknown option '-%c'\n", optopt);
+                // }
+                // else {
+                //     fprintf(stderr, "Unknown option '%s'\n", argv[optind - 1]);
+                // }
+
+                parse_error = true;
+                break;
+            }
+            default: {
+                fprintf(stderr, "Option '%s' requires an argument.\n", argv[optind - 1]);
+                // if (isprint(optopt)) {
+                //     // If the character entered is printable, display it back to the user.
+                //     fprintf(stderr, "Option '-%c' requires an argument.\n", optopt);
+                // }
+                // else {
+                //     fprintf(stderr, "Option '%s' requires an argument.\n", argv[optind - 1]);
+                // }
+                parse_error = true;
             }
         }
     }
 
-    /* Instead of reporting ‘--verbose’
-     and ‘--brief’ as they are encountered,
-     we report the final status resulting from them. */
-    // if (verbose_flag)
-    //   puts ("verbose flag is set");
+    // Dispaly errors for extra command line arguments (not options beginning with - or --).
+    if (optind < argc) {
+        while (optind < argc) {
+            printf("Unknown argument '%s'\n", argv[optind]);
+            optind++;
+        }
 
-    /* Print any remaining command line arguments (not options). */
-    if (optind < argc)
-    {
-        printf("non-option ARGV-elements: ");
-        while (optind < argc)
-            printf("%s ", argv[optind++]);
-        putchar('\n');
+        parse_error = true;
     }
 
-    Args *arg = (Args *)malloc(sizeof(Args));
+    // Wait until the end to exit so all bad command line arguments can be processed and displayed.
+    if (parse_error) {
+        printf("usage\n");
+        exit(1);
+    }
 
-    arg->x_min = x_min;
-    arg->x_max = x_max;
-    arg->y_min = y_min;
-    arg->y_max = y_max;
-    arg->step_size = steps;
-    arg->iterations = iterations;
-    arg->output_file = output_file;
-    arg->block_size = block_size;
-    arg->chunk = chunk;
-
-    return arg;
+    return self;
 }
 
 void Args_free(Args *self) {

@@ -9,4 +9,4 @@ done
 
 python3 rename.py
 
-convert output/*.bmp output/aaaaa.gif
+convert output/*.bmp mandelbrot.gif

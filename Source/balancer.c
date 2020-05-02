@@ -15,7 +15,7 @@ extern void launch_mandelbrot_kernel(Rgb ** grid, long num_rows, long num_cols, 
 #endif
 
 void _free_grid(Rgb **grid, long num_rows);
-long _get_start_row(long num_cols);
+void _get_row_range(Bitmap *bitmap, long *start_row, long *end_row);
 Rgb **_allocate_grid(long num_rows, long num_cols);
 
 #ifdef PARALLEL
@@ -27,45 +27,41 @@ Rgb **_allocate_grid(long num_rows, long num_cols);
 void compute_mandelbrot_parallel(const Args *args) {
     MPI_Init(NULL, NULL);
 
-    int myrank, numranks;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-    cuda_init(myrank);
+    // Dimensions of the whole bitmap.
+    long bitmap_rows, bitmap_cols;
+    Args_get_bitmap_dims(args, &bitmap_rows, &bitmap_cols);
 
-    long num_rows, num_cols;
-    Args_get_bitmap_dims(args, &num_rows, &num_cols);
-
-    Rgb **grid = _allocate_grid(num_rows, num_cols);
-
-    // printf("%s: %d\n", __FILE__, __LINE__);
-    Bitmap *bitmap = Bitmap_init(num_rows, num_cols, args->output_file);
-    // printf("%s: %d\n", __FILE__, __LINE__);
-
+    Bitmap *bitmap = Bitmap_init(bitmap_rows, bitmap_cols, args->output_file);
     if (bitmap == NULL) {
         fprintf(stderr, "Error opening file %s\n", args->output_file);
         exit(EXIT_FAILURE);
     }
 
-    if (bitmap == NULL) {
-        fprintf(stderr, "Error opening file %s\n", args->output_file);
-        exit(EXIT_FAILURE);
-    }
+    // Start inclusive, end exclusive.
+    long start_row, end_row;
+    _get_row_range(bitmap, &start_row, &end_row);
+    long grid_rows = end_row - start_row;
+    long grid_cols = bitmap_cols;
 
-    long start_row = _get_start_row(num_rows);
-    // printf("%s: %d\n", __FILE__, __LINE__);
+    Rgb **grid = _allocate_grid(grid_rows, grid_cols);
 
-    launch_mandelbrot_kernel(grid, start_row, num_rows, num_cols, args);
+    launch_mandelbrot_kernel(grid, start_row, grid_rows, grid_cols, args);
     MPI_Barrier(MPI_COMM_WORLD);
-    // printf("%s: %d\n", __FILE__, __LINE__);
 
-    int result = Bitmap_write_rows(bitmap, grid, start_row, num_cols);
+    for (int row = 0; row < grid_rows; row++) {
+        for (int col = 0; col < grid_cols; col++) {
+            Rgb color = grid[row][col];
+        }
+    }
+
+    int result = Bitmap_write_rows(bitmap, grid, start_row, grid_rows);
 
     if (result != 0) {
         fprintf(stderr, "Error writing to file %s\n", args->output_file);
         exit(EXIT_FAILURE);
     }
 
-    _free_grid(grid, num_rows);
-    // printf("%s: %d\n", __FILE__, __LINE__);
+    _free_grid(grid, grid_rows);
 
     result = Bitmap_free(bitmap);
 
@@ -167,20 +163,31 @@ void _free_grid(Rgb **grid, long num_rows) {
  *
  * @param num_cols
  */
-long _get_start_row(long num_rows) {
+void _get_row_range(Bitmap *bitmap, long *start_row, long *end_row) {
     int my_rank, num_ranks;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-    long start_row = 0;
-    if (num_rows % num_ranks == 0 || my_rank != num_ranks - 1) {
-        start_row = (num_rows / num_ranks) * my_rank;
+    // If the total number of rows can be divided evenly among the ranks, each rank gets an equal number of rows.
+    if (bitmap->num_rows % num_ranks == 0) {
+        long equal_row_size = bitmap->num_rows / num_ranks;
+        *start_row = equal_row_size * my_rank;
+        *end_row = *start_row + equal_row_size;
     }
     else {
-        long remainder = num_rows % num_ranks;
-        start_row = num_rows - remainder;
+        // If the total number of rows cannot be divided evenly among the ranks, ranks 0 to n-1 get
+        // chunks size computed from integer division, and the last rank gets the remainder.
+        if (my_rank == num_ranks - 1) {
+            // The last rank gets the remainder.
+            long remainder = bitmap->num_rows % num_ranks;
+            *start_row = bitmap->num_rows - remainder;
+            *end_row = *start_row + remainder;
+        }
+        else {
+            long equal_row_size = bitmap->num_rows / (num_ranks - 1);
+            *start_row = equal_row_size * my_rank;
+            *end_row = *start_row + equal_row_size;
+        }
     }
-
-    return start_row;
 }
 #endif

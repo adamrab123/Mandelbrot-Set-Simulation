@@ -23,7 +23,7 @@ __global__ void _mandelbrot_kernel(Rgb **grid, long start_row, long num_rows, lo
     for(; index < num_cols * num_rows; index += stride) {
         // Row and col in this process's grid.
         long row = index / num_cols;
-        long col = index % num_rows;
+        long col = index % num_cols;
 
         // Add the start_row to row so that we get the exact mandelbrot coordinates from the whole image.
         double c_real, c_imag;
@@ -67,12 +67,12 @@ extern "C" void cuda_init(int my_rank) {
 	cudaError_t cE;
 	if( (cE = cudaGetDeviceCount( &cudaDeviceCount)) != cudaSuccess )
     {
-        printf(" Unable to determine cuda device count, error is %d, count is %d\n", cE, cudaDeviceCount );
+        fprintf(stderr, "Unable to determine cuda device count, error is %d, count is %d\n", cE, cudaDeviceCount );
         exit(-1);
     }
     if( (cE = cudaSetDevice( my_rank % cudaDeviceCount )) != cudaSuccess )
     {
-        printf(" Unable to have rank %d set to cuda device %d, error is %d \n", my_rank, (my_rank % cudaDeviceCount), cE);
+        fprintf(stderr, "Unable to have rank %d set to cuda device %d, error is %d \n", my_rank, (my_rank % cudaDeviceCount), cE);
         exit(-1);
     }
 }

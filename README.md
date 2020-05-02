@@ -1,6 +1,6 @@
 # Mandelbrot Set Simulation
 
-- ![](output/aaaaa.gif)
+- ![](image.gif)
 - Overleaf document: https://www.overleaf.com/2373935774gwqzxqfbdqkf
 
 ## Floating Point Arithmetic

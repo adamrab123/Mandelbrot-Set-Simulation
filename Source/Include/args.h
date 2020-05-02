@@ -17,8 +17,7 @@ typedef struct {
     int chunk;
 } Args;
 
-Args *get_args(int argc, char **argv);
-
+Args *Args_init(int argc, char **argv);
 void Args_free(Args *self);
 
 #ifdef __CUDACC__

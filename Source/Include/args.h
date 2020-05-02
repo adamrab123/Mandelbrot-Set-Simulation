@@ -23,11 +23,11 @@ void Args_free(Args *self);
 #ifdef __CUDACC__
 __host__ __device__
 #endif
-void Args_bitmap_dims(const Args *self, long *width, long *height);
+void Args_get_bitmap_dims(const Args *self, long *num_rows, long *num_cols);
 
 #ifdef __CUDACC__
 __host__ __device__
 #endif
-void Args_bitmap_to_complex(const Args *self, int x, int y, double *c_real, double *c_imag);
+void Args_bitmap_to_complex(const Args *self, long row, long col, double *c_real, double *c_imag);
 
 #endif // ARGS_H

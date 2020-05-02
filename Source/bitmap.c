@@ -17,8 +17,11 @@ const int FILE_HEADER_SIZE = 14; // format-required
 const int INFO_HEADER_SIZE = 40; // format-required
 const unsigned char PADDING[3] = {0,0,0}; // .bmp format padding array
 
+enum WriteType { COLLECTIVE, NON_COLLECTIVE };
+typedef enum WriteType WriteType;
+
 // Function declarations
-int _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data);
+int _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data, WriteType write_type);
 unsigned char *_create_bmp_file_header(const Bitmap *self);
 unsigned char *_create_bmp_info_header(const Bitmap *self);
 
@@ -74,8 +77,9 @@ Bitmap *Bitmap_init(long num_rows, long num_cols, const char *file_name) {
         unsigned char* file_header = _create_bmp_file_header(self);
         unsigned char* info_header = _create_bmp_info_header(self);
 
-        int status1 = _write_at(self, 0, file_header, FILE_HEADER_SIZE);
-        int status2 = _write_at(self, FILE_HEADER_SIZE, info_header, INFO_HEADER_SIZE);
+        // In the parallel version, only process 0 calls these, so they cannot be collective.
+        int status1 = _write_at(self, 0, file_header, FILE_HEADER_SIZE, NON_COLLECTIVE);
+        int status2 = _write_at(self, FILE_HEADER_SIZE, info_header, INFO_HEADER_SIZE, NON_COLLECTIVE);
 
         if (status1 != 0 || status2 != 0) {
             return NULL;
@@ -112,7 +116,9 @@ int Bitmap_free(Bitmap *self) {
 }
 
 /**
- * @brief Writes passed pixel rows to the output file using parallel MPI methods
+ * @brief Writes passed pixel rows to the output file using parallel MPI methods.
+ *
+ * Uses collective IO in the parallel version, so every process must call this method.
  * 
  * @param self Bitmap object
  * @param pixels Array of pixel rows
@@ -152,20 +158,29 @@ int Bitmap_write_rows(Bitmap *self, Rgb *pixels, long start_row, long rows_to_wr
     // Convert offset to place in the file where the write should start.
     pixel_offset -= pixels_data_length;
 
-    return _write_at(self, pixel_offset, pixels_data, pixels_data_length);
+    return _write_at(self, pixel_offset, pixels_data, pixels_data_length, COLLECTIVE);
 }
 
 // Private methods
 
-int _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data) {
+// Last parameter is ignored in serial version.
+int _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data, WriteType write_type) {
     // Both parallel and serial versions seek from the beginning of the file every time.
     #ifdef PARALLEL
-    int result = MPI_File_write_at(self->_file, offset, data, len_data, MPI_UNSIGNED_CHAR, NULL);
+    int result = 0;
+
+    if (write_type == COLLECTIVE) {
+        result = MPI_File_write_at_all(self->_file, offset, data, len_data, MPI_UNSIGNED_CHAR, NULL);
+    }
+    else {
+        result = MPI_File_write_at(self->_file, offset, data, len_data, MPI_UNSIGNED_CHAR, NULL);
+    }
 
     if (result != MPI_SUCCESS) {
         return 1;
     }
     #else
+
     int result1 = fseek(self->_file, offset, SEEK_SET);
     int bytes_written = fwrite(data, len_data, 1, self->_file);
 

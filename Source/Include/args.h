@@ -13,8 +13,8 @@ typedef struct {
     double step_size;
     long iterations;
     char *output_file;
-    int block_size;
-    int chunks;
+    long block_size;
+    long chunks;
 } Args;
 
 Args *Args_init(int argc, char **argv);

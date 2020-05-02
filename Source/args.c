@@ -1,3 +1,4 @@
+#include <errno.h>
 #include<ctype.h>
 #include<stdbool.h>
 #include <stdlib.h>
@@ -7,6 +8,9 @@
 #include <stdio.h>
 
 #include "args.h"
+
+double _parse_double(const char *str, bool *error);
+long _parse_long(const char *str, bool *error);
 
 /**
  * @brief Parses the given argc,argv and modifies program parameters 
@@ -71,19 +75,19 @@ Args *Args_init(int argc, char **argv) {
                 break;
             }
             case 'x': {
-                self->x_min = atof(optarg);
+                self->x_min = _parse_double(optarg, &parse_error);
                 break;
             }
             case 'X': {
-                self->x_max = atof(optarg);
+                self->x_max = _parse_double(optarg, &parse_error);
                 break;
             }
             case 'y': {
-                self->y_min = atof(optarg);
+                self->y_min = _parse_double(optarg, &parse_error);
                 break;
             }
             case 'Y': {
-                self->y_max = atof(optarg);
+                self->y_max = _parse_double(optarg, &parse_error);
                 break;
             }
             case 's': {
@@ -92,60 +96,49 @@ Args *Args_init(int argc, char **argv) {
                 char *word = (char*)calloc(length + 1, sizeof(char));
                 strcpy(word, optarg);
                 word[length] = '\0';
-                self->step_size = atof(word);
+                self->step_size = _parse_double(optarg, &parse_error);
                 break;
             }
             case 'i': {
-                self->iterations = atof(optarg);
+                self->iterations = _parse_long(optarg, &parse_error);
                 break;
             }
             case 'o': {
+                // No verification for file name here, it will be done when the file is opened.
                 self->output_file = optarg;
                 break;
             }
             case 'b': {
-                self->block_size = atof(optarg);
+                self->block_size = _parse_long(optarg, &parse_error);
                 break;
             }
             case 'c': {
-                self->chunks = atof(optarg);
+                self->chunks = _parse_long(optarg, &parse_error);
                 break;
             }
             case '?': {
-                // if (optopt == 'c') {
-                //     fprintf(stderr, "Option -%c requires an argument\n", optopt);
-                // }
-                // else if (isprint(optopt)) {
-                //     // If the character entered is printable, display it back to the user.
-                //     fprintf(stderr, "Unknown option '-%c'\n", optopt);
-                // }
-                // else {
-                //     // Print the hex code of the character if it is not printable.
-                //     fprintf(stderr, "Unknown option character '\\x%x'\n", optopt);
-                // }
+                const char *option = argv[optind - 1];
+                if (optind == 1) {
+                    // Prevent from displaying program name as invalid option.
+                    option = argv[optind];
+                }
 
-                fprintf(stderr, "Unknown option '%s'\n", argv[optind - 1]);
-                // if (isprint(optopt)) {
-                //     // If the character entered is printable, display it back to the user.
-                //     fprintf(stderr, "Unknown option '-%c'\n", optopt);
-                // }
-                // else {
-                //     fprintf(stderr, "Unknown option '%s'\n", argv[optind - 1]);
-                // }
-
+                fprintf(stderr, "Unknown option '%s'\n", option);
                 parse_error = true;
                 break;
             }
             default: {
-                fprintf(stderr, "Option '%s' requires an argument.\n", argv[optind - 1]);
-                // if (isprint(optopt)) {
-                //     // If the character entered is printable, display it back to the user.
-                //     fprintf(stderr, "Option '-%c' requires an argument.\n", optopt);
-                // }
-                // else {
-                //     fprintf(stderr, "Option '%s' requires an argument.\n", argv[optind - 1]);
-                // }
-                parse_error = true;
+                // If a parse error was already encountered, it cannot tell whether required args were provided.
+                if (!parse_error) {
+                    const char *option = argv[optind - 1];
+                    if (optind == 1) {
+                        // Prevent from displaying program name as requiring an argument.
+                        option = argv[optind];
+                    }
+
+                    fprintf(stderr, "Option '%s' requires an argument.\n", option);
+                    parse_error = true;
+                }
             }
         }
     }
@@ -162,7 +155,6 @@ Args *Args_init(int argc, char **argv) {
 
     // Wait until the end to exit so all bad command line arguments can be processed and displayed.
     if (parse_error) {
-        printf("usage\n");
         exit(1);
     }
 
@@ -189,4 +181,38 @@ __host__ __device__
 void Args_bitmap_to_complex(const Args *self, long row, long col, double *c_real, double *c_imag) {
     *c_real = (col * self->step_size) + self->x_min;
     *c_imag = self->y_max - (row * self->step_size);
+}
+
+double _parse_double(const char *str, bool *error) {
+    char *end_ptr;
+    double result = strtod(str, &end_ptr);
+
+    errno = 0;
+    if (errno == ERANGE) {
+        fprintf(stderr, "Number %s is out of bounds.\n", str);
+        *error = true;
+    }
+    else if (end_ptr == str) {
+        fprintf(stderr, "%s is not a valid number.\n", str);
+        *error = true;
+    }
+
+    return result;
+}
+
+long _parse_long(const char *str, bool *error) {
+    char *end_ptr;
+    long result = strtol(str, &end_ptr, 10);
+
+    errno = 0;
+    if (errno == ERANGE) {
+        fprintf(stderr, "Integer %s is out of bounds.\n", str);
+        *error = true;
+    }
+    else if (end_ptr == str) {
+        fprintf(stderr, "%s is not a valid integer.\n", str);
+        *error = true;
+    }
+
+    return result;
 }

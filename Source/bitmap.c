@@ -47,12 +47,7 @@ Bitmap *Bitmap_init(long num_rows, long num_cols, const char *file_name) {
     // Open file in write, binary append mode.
     // Existing file of the same name will be deleted.
     #ifdef PARALLEL
-<<<<<<< HEAD
-    self->_file;
-    int result = MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &self->_file);
-=======
     int result = MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &self->_file);
->>>>>>> refs/rewritten/daa2411
 
     if (result != MPI_SUCCESS) {
         return NULL;

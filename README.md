@@ -72,7 +72,7 @@
     - `--ymax, -Y`
         - default: -2
 
-    - `--step, -s`: Counting from zero, this amount will be added in the x or y direction to determine every point that will be calculated within the x and y bounds.
+    - `--step-size, -s`: Counting from zero, this amount will be added in the x or y direction to determine every point that will be calculated within the x and y bounds.
 
         - default: 0.001
 
@@ -81,19 +81,18 @@
     - `--iterations, -i`: The number of iterations to perform before determining whether a number belongs in the set or not.
         - default: 20
 
-    - `--output, -o`: The name of the file to output the image to if chunks=1, or the name of the directory to output files to if chunks>1.
+    - `--output-file, -o`: The name of the file to output the image to if chunks=1, or the name of the directory to output files to if chunks>1.
 
-    - `--blocksize, -b`: The number of threads per block to use in the computation.
-
-        - default: TBD
-
-        - The number of blocks to use will be computed from the total number of points to calculate and this value.
-
-    - `--chunk, -c`: The number of different bitmap image segments of the full image to generate.
-
-        - default: 1
-
-        - Files will be named `<row><col>.bmp`.
+    - `--block-size, -b`: The number of threads per block to use in the computation.
+- default: TBD
+        
+- The number of blocks to use will be computed from the total number of points to calculate and this value.
+        
+- `--chunk, -c`: The number of different bitmap image segments of the full image to generate.
+    
+    - default: 1
+    
+    - Files will be named `<row><col>.bmp`.
             - Indexing starts at 0, and row 0 column 0 is the top left corner.
 
 ## Math

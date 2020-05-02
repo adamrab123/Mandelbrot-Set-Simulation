@@ -96,6 +96,7 @@ Args *get_args(int argc, char **argv) {
     char* output_file = (char *)calloc(1, 100);
     strcpy(output_file, "output.bmp");
     int block_size = 100;
+    int chunk;
 
     int c;
     // defining what parameters getopt needs to look for
@@ -108,20 +109,21 @@ Args *get_args(int argc, char **argv) {
           // {"brief",   no_argument,       &verbose_flag, 0},
           /* These options don’t set a flag.
              We distinguish them by their indices. */
-          {"x-min",     required_argument,       0, 'x'},
-          {"x-max",  required_argument,       0, 'X'},
-          {"y-min",     required_argument,       0, 'y'},
-          {"y-max",  required_argument,       0, 'Y'},
-          {"step-size",  required_argument, 0, 's'},
-          {"output-file",  required_argument, 0, 'o'},
+          {"x-min",         required_argument, 0, 'x'},
+          {"x-max",         required_argument, 0, 'X'},
+          {"y-min",         required_argument, 0, 'y'},
+          {"y-max",         required_argument, 0, 'Y'},
+          {"step-size",     required_argument, 0, 's'},
+          {"output-file",   required_argument, 0, 'o'},
           {"block-size",    required_argument, 0, 'b'},
           {"iterations",    required_argument, 0, 'i'},
+          {"chunk",         required_argument, 0, 'c'},
           {0, 0, 0, 0}
         };
       /* getopt_long stores the option index here. */
       int option_index = 0;
 
-      c = getopt_long (argc, argv, ":x:X:y:Y:s:i:b:o:lx",
+      c = getopt_long (argc, argv, ":x:X:y:Y:s:o:b:i:c:lx",
                        long_options, &option_index);
 
       /* Detect the end of the options. */
@@ -141,20 +143,20 @@ Args *get_args(int argc, char **argv) {
           break;
 
           case 'x':
-             printf("x_min set to: %s\n", optarg);
-             x_min = atoi(optarg);
+                printf("x_min set to: %s\n", optarg);
+                x_min = atoi(optarg);
                 break;
             case 'X': 
-             printf("x_max set to: %s\n", optarg);
-             x_max = atoi(optarg);
+                printf("x_max set to: %s\n", optarg);
+                x_max = atoi(optarg);
                 break;
             case 'y':
-             printf("y_min set to: %s\n", optarg);
-             y_min = atoi(optarg);
+                printf("y_min set to: %s\n", optarg);
+                y_min = atoi(optarg);
                 break;
             case 'Y': 
-             printf("y_max set to: %s\n", optarg);
-             y_max = atoi(optarg);
+                printf("y_max set to: %s\n", optarg);
+                y_max = atoi(optarg);
                 break;
             case 's':
                 printf("steps set to: %s\n", optarg);
@@ -178,6 +180,10 @@ Args *get_args(int argc, char **argv) {
             case 'b':
                 printf("block_size set to: %s\n", optarg);
                 block_size = atoi(optarg);
+                break;
+            case 'c': 
+                printf("chunk set to: %s\n", optarg);
+                chunk = atoi(optarg);
                 break;
 
         default:
@@ -210,6 +216,7 @@ Args *get_args(int argc, char **argv) {
 	arg->iterations = iterations;
 	arg->output_file = output_file;
 	arg->block_size = block_size;
+    arg->chunk = chunk;
 
 	return arg;
 }

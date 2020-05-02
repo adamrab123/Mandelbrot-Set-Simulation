@@ -14,6 +14,7 @@ typedef struct {
     long iterations;
     char *output_file;
     int block_size;
+    int chunk;
 } Args;
 
 Args *get_args(int argc, char **argv);

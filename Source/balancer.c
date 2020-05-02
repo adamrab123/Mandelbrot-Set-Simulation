@@ -33,7 +33,7 @@ void compute_mandelbrot_parallel(const Args *args) {
 
     Bitmap *bitmap = Bitmap_init(num_rows, num_cols, args->output_file);
 
-    long start_row = _get_start_row(num_cols);
+    long start_row = _get_start_row(num_rows);
 
     launch_mandelbrot_kernel(grid, start_row, num_rows, num_cols, args);
     MPI_Barrier(MPI_COMM_WORLD);

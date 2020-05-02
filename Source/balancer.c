@@ -48,12 +48,6 @@ void compute_mandelbrot_parallel(const Args *args) {
     launch_mandelbrot_kernel(grid, start_row, grid_rows, grid_cols, args);
     MPI_Barrier(MPI_COMM_WORLD);
 
-    for (int row = 0; row < grid_rows; row++) {
-        for (int col = 0; col < grid_cols; col++) {
-            Rgb color = grid[row][col];
-        }
-    }
-
     int result = Bitmap_write_rows(bitmap, grid, start_row, grid_rows);
 
     if (result != 0) {

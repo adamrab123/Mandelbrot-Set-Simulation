@@ -95,7 +95,7 @@ Args *Args_init(int argc, char **argv) {
             // the steps conversion requirs adding a null byte
             //      to the end of the array before converting
             int length = sizeof(optarg) / sizeof(optarg[0]);
-            char *word = calloc(length + 1, sizeof(char));
+            char *word = (char*)calloc(length + 1, sizeof(char));
             strcpy(word, optarg);
             word[length] = '\0';
             // printf("Converted word = %s\n", word);

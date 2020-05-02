@@ -8,12 +8,7 @@
 
 #ifdef PARALLEL
 #include <mpi.h>
-
-// Cuda functions that only exist when kernel.cu is linked in parallel mode.
-extern void cuda_init(int my_rank);
-extern void launch_mandelbrot_kernel(Rgb *grid, long num_rows, long num_cols, long grid_offset_y, const Args *args);
-extern void *cuda_malloc(size_t size);
-extern void cuda_free(void *mem);
+#include "kernel.h"
 #endif
 
 void _free_grid(Rgb **grid, long num_rows);

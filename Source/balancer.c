@@ -169,18 +169,25 @@ void _get_row_range(Bitmap *bitmap, long *start_row, long *end_row) {
     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
     // If the total number of rows can be divided evenly among the ranks, each rank gets an equal number of rows.
-    // If the total number of rows cannot be divided evenly among the ranks, ranks 0 to n-1 get the result of num_rows
-    // // num_ranks, and rank n gets the remainder.
-    if (bitmap->num_rows % num_ranks == 0 || my_rank != num_ranks - 1) {
-        *start_row = (bitmap->num_rows / num_ranks) * my_rank;
-        *end_row = *start_row + bitmap->num_rows / num_ranks;
+    if (bitmap->num_rows % num_ranks == 0) {
+        long equal_row_size = bitmap->num_rows / num_ranks;
+        *start_row = equal_row_size * my_rank;
+        *end_row = *start_row + equal_row_size;
     }
     else {
-        long remainder = bitmap->num_rows % num_ranks;
-        *start_row = bitmap->num_rows - remainder;
-        *end_row = *start_row + remainder;
+        // If the total number of rows cannot be divided evenly among the ranks, ranks 0 to n-1 get
+        // chunks size computed from integer division, and the last rank gets the remainder.
+        if (my_rank == num_ranks - 1) {
+            // The last rank gets the remainder.
+            long remainder = bitmap->num_rows % num_ranks;
+            *start_row = bitmap->num_rows - remainder;
+            *end_row = *start_row + remainder;
+        }
+        else {
+            long equal_row_size = bitmap->num_rows / (num_ranks - 1);
+            *start_row = equal_row_size * my_rank;
+            *end_row = *start_row + equal_row_size;
+        }
     }
-
-    printf("rank: %d start row: %ld end row: %ld\n", my_rank, *start_row, *end_row);
 }
 #endif

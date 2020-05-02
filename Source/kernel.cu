@@ -67,12 +67,12 @@ extern "C" void cuda_init(int my_rank) {
 	cudaError_t cE;
 	if( (cE = cudaGetDeviceCount( &cudaDeviceCount)) != cudaSuccess )
     {
-        printf(" Unable to determine cuda device count, error is %d, count is %d\n", cE, cudaDeviceCount );
+        fprintf(stderr, "Unable to determine cuda device count, error is %d, count is %d\n", cE, cudaDeviceCount );
         exit(-1);
     }
     if( (cE = cudaSetDevice( my_rank % cudaDeviceCount )) != cudaSuccess )
     {
-        printf(" Unable to have rank %d set to cuda device %d, error is %d \n", my_rank, (my_rank % cudaDeviceCount), cE);
+        fprintf(stderr, "Unable to have rank %d set to cuda device %d, error is %d \n", my_rank, (my_rank % cudaDeviceCount), cE);
         exit(-1);
     }
 }

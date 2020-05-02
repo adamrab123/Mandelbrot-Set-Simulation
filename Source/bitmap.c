@@ -125,35 +125,40 @@ int Bitmap_write_pixel(Bitmap *self, Rgb pixel, long row, long col) {
  * 
  * @param self Bitmap object
  * @param pixels Array of pixel rows
- * @param num_rows Number of pixel rows
+ * @param rows_to_write Number of pixel rows
  * @param start_row The pixel row index to start writing at, with origin in the top left corner.
  */
-int Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows) {
+int Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long rows_to_write) {
     // compute padding needed and size of array to be written
-    long pixels_data_length = num_rows * ((self->num_cols * BYTES_PER_PIXEL) + self->_padding_size);
+    long pixels_data_length = rows_to_write * ((self->num_cols * BYTES_PER_PIXEL) + self->_padding_size);
     unsigned char pixels_data[pixels_data_length];
-    // printf("%s: %d\n", __FILE__, __LINE__);
+    printf("%s: %d\n", __FILE__, __LINE__);
 
     long index = 0;
-    for (long row = 0; row < num_rows; row++) {
+    for (long row = 0; row < rows_to_write; row++) {
         for (long col = 0; col < self->num_cols; col++) {
-            // printf("%s: %d\n", __FILE__, __LINE__);
+            printf("top index: %ld\n", index);
+            printf("top rgb: [%u, %u, %u]\n", pixels[row][col].blue, pixels[row][col].green, pixels[row][col].red);
+
             // add pixel to array to be written
             pixels_data[index]      = pixels[row][col].blue;
             pixels_data[index + 1]  = pixels[row][col].green;
             pixels_data[index + 2]  = pixels[row][col].red;
 
+            printf("bottom index: %ld\n", index);
+            printf("bottom rgb: [%u, %u, %u]\n", pixels[row][col].blue, pixels[row][col].green, pixels[row][col].red);
+
             index += 3;
-            // printf("%s: %d\n", __FILE__, __LINE__);
         }
 
         // add padding to end of row in array to be written
-        for (int k = 0; k < self->_padding_size; k++) {
-            pixels_data[index] = PADDING[0];
-            index++;
-        }
+        // for (int k = 0; k < self->_padding_size; k++) {
+        //     pixels_data[index] = PADDING[0];
+        //     index++;
+        // }
     }
 
+    printf("%s: %d\n", __FILE__, __LINE__);
     return _write_at_pixel(self, start_row, 0, pixels_data, pixels_data_length);
 }
 

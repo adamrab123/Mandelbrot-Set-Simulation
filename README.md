@@ -178,3 +178,7 @@
         - d = 100,000: 7,500,000,000 bytes (7.5 Gb)
         - d = 1,000,000: 750,000,000,000 bytes (750 Gb)
 
+## Limits
+- Max size of `long` is 9,223,372,036,854,775,807 (thousands of terabytes), which should be more bytes than our file ever will be.
+
+- `double` gives 15 decimal points of precision, which is the best we can do on the GPU.

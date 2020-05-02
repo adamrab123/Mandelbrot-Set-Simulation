@@ -16,7 +16,7 @@ typedef struct {
     int block_size;
 } Args;
 
-Args *Args_init(int argc, char **argv);
+Args *get_args(int argc, char **argv);
 
 void Args_free(Args *self);
 

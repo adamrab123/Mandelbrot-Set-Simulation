@@ -2,51 +2,53 @@
 #include <string.h>
 #include <math.h>
 #include <getopt.h>
+#include <stdio.h>
+
 
 #include "args.h"
 
-Args *Args_init(int argc, char **argv) {
-    Args *self = (Args *)malloc(sizeof(Args));
+// Args *Args_init(int argc, char **argv) {
+//     Args *self = (Args *)malloc(sizeof(Args));
 
-    // Normal viewpoint.
-    // self->x_min = -2.1;
-    // self->x_max = 1;
-    // self->y_min = -1.5;
-    // self->y_max = 1.5;
+//     // Normal viewpoint.
+//     // self->x_min = -2.1;
+//     // self->x_max = 1;
+//     // self->y_min = -1.5;
+//     // self->y_max = 1.5;
 
-    // Test top right quadrant only.
-    self->x_min = 0;
-    self->x_max = 2;
-    self->y_min = 0;
-    self->y_max = 2; 
+//     // Test top right quadrant only.
+//     self->x_min = 0;
+//     self->x_max = 2;
+//     self->y_min = 0;
+//     self->y_max = 2; 
 
-    // Square image test.
-    // self->x_min = -2;
-    // self->x_max = 2;
-    // self->y_min = -2;
-    // self->y_max = 2;
+//     // Square image test.
+//     // self->x_min = -2;
+//     // self->x_max = 2;
+//     // self->y_min = -2;
+//     // self->y_max = 2;
 
-    // Wider image test.
-    // self->x_min = -2;
-    // self->x_max = 2;
-    // self->y_min = -1;
-    // self->y_max = 1;
+//     // Wider image test.
+//     // self->x_min = -2;
+//     // self->x_max = 2;
+//     // self->y_min = -1;
+//     // self->y_max = 1;
 
-    // Taller image test.
-    // self->x_min = -1;
-    // self->x_max = 1;
-    // self->y_min = -2;
-    // self->y_max = 2;
+//     // Taller image test.
+//     // self->x_min = -1;
+//     // self->x_max = 1;
+//     // self->y_min = -2;
+//     // self->y_max = 2;
 
-    self->step_size = 0.01;
+//     self->step_size = 0.01;
 
-    self->iterations = 50;
-    self->output_file = (char *)calloc(1, 100);
-    strcpy(self->output_file, "output.bmp");
-    self->block_size = 4;
+//     self->iterations = 50;
+//     self->output_file = (char *)calloc(1, 100);
+//     strcpy(self->output_file, "output.bmp");
+//     self->block_size = 4;
 
-    return self;
-}
+//     return self;
+// }
 
 void Args_free(Args *self) {
     free(self->output_file);
@@ -82,89 +84,132 @@ void Args_bitmap_to_complex(const Args *self, long row, long col, double *c_real
  *
  * @return An @c Arguments instance with user provided parameter inputts
  */
-// Args get_args(int argc, char *argv[]) { 
+Args *get_args(int argc, char **argv) { 
 
-//     // setting all parameters to their default values
-//     int x_min = -2;
-//     int x_max = 2;
-//     int y_min = -2;
-//     int y_max = 2;
-//     float steps = 0.001;
-//     int iterations = 20;
-//     char* output_file = "output.bmp";
-//     int block_size = 100;
+    // setting all parameters to their default values
+    int x_min = -2;
+    int x_max = 2;
+    int y_min = -2;
+    int y_max = 2;
+    float steps = 0.1;
+    int iterations = 20;
+    char* output_file = (char *)calloc(1, 100);
+    strcpy(output_file, "output.bmp");
+    int block_size = 100;
 
-//     int opt;
-//     // defining what parameters getopt needs to look for
-//     while((opt = getopt(argc, argv, ":x:X:y:Y:s:i:b:o:lx")) != -1) { 
-//         // iterating through possible matches
-//         // for int options, convert to int. 
-//         // for float convert to float, etc 
-//         switch(opt) {  
-//             case 'x':
-//             	printf("x_min set to: %s\n", optarg);
-//             	x_min = atoi(optarg);
-//                 break;
-//             case 'X': 
-//             	printf("x_max set to: %s\n", optarg);
-//             	x_max = atoi(optarg);
-//                 break;
-//             case 'y':
-//             	printf("y_min set to: %s\n", optarg);
-//             	y_min = atoi(optarg);
-//                 break;
-//             case 'Y': 
-//             	printf("y_max set to: %s\n", optarg);
-//             	y_max = atoi(optarg);
-//                 break;
-//             case 's':
-//                 printf("steps set to: %s\n", optarg);
-//                 // the steps conversion requirs adding a null byte 
-//                 //      to the end of the array before converting
-//                 int length = sizeof(optarg) / sizeof(optarg[0]);
-//                 char* word = calloc(length+1, sizeof(char));
-//                 strcpy(word,optarg);
-//                 word[length] = '\0';
-//                 printf("Converted word = %s\n", word);
-//                 steps = atof(word);
-//                 break;
-//             case 'i':
-//                 printf("iteratios set to: %s\n", optarg);
-//                 iterations = atoi(optarg);
-//                 break;
-//             case 'o':
-//                 printf("output_file set to: %s\n", optarg);
-//                 output_file = optarg;
-//                 break;
-//             case 'b':
-//                 printf("block_size set to: %s\n", optarg);
-//                 block_size = atoi(optarg);
-//                 break;
-//             case ':':
-//                 printf("option needs a value\n");
-//                 break;
-//             case '?':
-//                 printf("unknown option: %c\n", optopt);
-//                 break;
-//         }  
-//     }
-      
-//     // optind is for the extra arguments 
-//     // which are not parsed 
-//     for(;optind < argc;optind++){      
-//         printf("extra arguments: %s\n", argv[optind]);
-//     } 
+    int c;
+    // defining what parameters getopt needs to look for
+     while (1)
+    {
+      static struct option long_options[] =
+        {
+          /* These options set a flag. */
+          // {"verbose", no_argument,       &verbose_flag, 1},
+          // {"brief",   no_argument,       &verbose_flag, 0},
+          /* These options don’t set a flag.
+             We distinguish them by their indices. */
+          {"x-min",     required_argument,       0, 'x'},
+          {"x-max",  required_argument,       0, 'X'},
+          {"y-min",     required_argument,       0, 'y'},
+          {"y-max",  required_argument,       0, 'Y'},
+          {"step-size",  required_argument, 0, 's'},
+          {"output-file",  required_argument, 0, 'o'},
+          {"block-size",    required_argument, 0, 'b'},
+          {"iterations",    required_argument, 0, 'i'},
+          {0, 0, 0, 0}
+        };
+      /* getopt_long stores the option index here. */
+      int option_index = 0;
 
-//     Args arg;
+      c = getopt_long (argc, argv, ":x:X:y:Y:s:i:b:o:lx",
+                       long_options, &option_index);
 
-// 	arg.x_min = x_min;
-// 	arg.x_max = x_max;
-// 	arg.y_min = y_min;
-// 	arg.y_max = y_max;
-// 	arg.step_size = steps;
-// 	arg.iterations = iterations;
-// 	arg.output_file = output_file;
-// 	arg.block_size = block_size;
+      /* Detect the end of the options. */
+      if (c == -1)
+        break;
 
-// 	return arg;
-// }
+      switch (c)
+        {
+        case 0:
+          /* If this option set a flag, do nothing else now. */
+          if (long_options[option_index].flag != 0)
+            break;
+          printf ("option %s", long_options[option_index].name);
+          if (optarg)
+            printf (" with arg %s", optarg);
+          printf ("\n");
+          break;
+
+          case 'x':
+             printf("x_min set to: %s\n", optarg);
+             x_min = atoi(optarg);
+                break;
+            case 'X': 
+             printf("x_max set to: %s\n", optarg);
+             x_max = atoi(optarg);
+                break;
+            case 'y':
+             printf("y_min set to: %s\n", optarg);
+             y_min = atoi(optarg);
+                break;
+            case 'Y': 
+             printf("y_max set to: %s\n", optarg);
+             y_max = atoi(optarg);
+                break;
+            case 's':
+                printf("steps set to: %s\n", optarg);
+                // the steps conversion requirs adding a null byte 
+                //      to the end of the array before converting
+                int length = sizeof(optarg) / sizeof(optarg[0]);
+                char* word = calloc(length+1, sizeof(char));
+                strcpy(word,optarg);
+                word[length] = '\0';
+                // printf("Converted word = %s\n", word);
+                steps = atof(word);
+                break;
+            case 'i':
+                printf("iteratios set to: %s\n", optarg);
+                iterations = atoi(optarg);
+                break;
+            case 'o':
+                printf("output_file set to: %s\n", optarg);
+                output_file = optarg;
+                break;
+            case 'b':
+                printf("block_size set to: %s\n", optarg);
+                block_size = atoi(optarg);
+                break;
+
+        default:
+          abort ();
+        }
+    }
+
+  /* Instead of reporting ‘--verbose’
+     and ‘--brief’ as they are encountered,
+     we report the final status resulting from them. */
+  // if (verbose_flag)
+  //   puts ("verbose flag is set");
+
+  /* Print any remaining command line arguments (not options). */
+  if (optind < argc)
+    {
+      printf ("non-option ARGV-elements: ");
+      while (optind < argc)
+        printf ("%s ", argv[optind++]);
+      putchar ('\n');
+    }
+
+    Args *arg = (Args *)malloc(sizeof(Args));
+
+	arg->x_min = x_min;
+	arg->x_max = x_max;
+	arg->y_min = y_min;
+	arg->y_max = y_max;
+	arg->step_size = steps;
+	arg->iterations = iterations;
+	arg->output_file = output_file;
+	arg->block_size = block_size;
+
+	return arg;
+}

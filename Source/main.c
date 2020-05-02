@@ -4,7 +4,7 @@
 
 int main(int argc, char **argv) {
     // Hard code arguments for now.
-    Args *args = Args_init(argc, argv);
+    Args *args = get_args(argc, argv);
 
     #ifdef PARALLEL
     compute_mandelbrot_parallel(args);

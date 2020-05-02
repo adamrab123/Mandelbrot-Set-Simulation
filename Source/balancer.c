@@ -43,7 +43,7 @@ void compute_mandelbrot_parallel(const Args *args) {
     long grid_rows = end_row - start_row;
     long grid_cols = bitmap_cols;
 
-    Rgb **grid = _allocate_grid(grid_rows, grid_cols);
+    Rgb *grid = malloc(grid_rows * grid_cols * sizeof(Rgb));
 
     launch_mandelbrot_kernel(grid, start_row, grid_rows, grid_cols, args);
     MPI_Barrier(MPI_COMM_WORLD);
@@ -55,7 +55,7 @@ void compute_mandelbrot_parallel(const Args *args) {
         exit(EXIT_FAILURE);
     }
 
-    _free_grid(grid, grid_rows);
+    free(grid);
 
     result = Bitmap_free(bitmap);
 
@@ -82,7 +82,7 @@ void compute_mandelbrot_serial(const Args *args) {
 
     for (long row = 0; row < num_rows; row++) {
         // Grid will be used to contain a single row.
-        Rgb **row_grid = _allocate_grid(1, num_cols);
+        Rgb *row_grid = malloc(num_cols * sizeof(Rgb));
 
         for (long col = 0; col < num_cols; col++) {
             double c_real, c_imag;
@@ -98,7 +98,7 @@ void compute_mandelbrot_serial(const Args *args) {
                 color = RGB_BLACK;
             }
 
-            row_grid[0][col] = color;
+            row_grid[col] = color;
             free(point);
         }
 
@@ -109,7 +109,7 @@ void compute_mandelbrot_serial(const Args *args) {
             exit(EXIT_FAILURE);
         }
 
-        _free_grid(row_grid, 1);
+        free(row_grid);
     }
 
     int result = Bitmap_free(bitmap);

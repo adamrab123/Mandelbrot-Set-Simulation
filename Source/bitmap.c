@@ -130,8 +130,8 @@ int Bitmap_write_rows(Bitmap *self, Rgb *pixels, long start_row, long rows_to_wr
         for (long col = 0; col < self->num_cols; col++) {
             // add pixel to array to be written
             pixels_data[index]      = pixels[self->num_cols * row + col].blue;
-            pixels_data[index + 1]  = pixels[self->num_cols * row + col].blue;
-            pixels_data[index + 2]  = pixels[self->num_cols * row + col].blue;
+            pixels_data[index + 1]  = pixels[self->num_cols * row + col].green;
+            pixels_data[index + 2]  = pixels[self->num_cols * row + col].red;
 
             index += 3;
         }

@@ -18,7 +18,6 @@ const int INFO_HEADER_SIZE = 40; // format-required
 const unsigned char PADDING[3] = {0,0,0}; // .bmp format padding array
 
 // Function declarations
-int _write_at_pixel(const Bitmap *self, long row, long col, const unsigned char *data, long data_len);
 int _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data);
 unsigned char *_create_bmp_file_header(const Bitmap *self);
 unsigned char *_create_bmp_info_header(const Bitmap *self);
@@ -113,20 +112,6 @@ int Bitmap_free(Bitmap *self) {
 }
 
 /**
- * @brief Writes passed pixel to the output file using serial C methods
- * 
- * @param self Bitmap object
- * @param pixel Rgb enum containing color data
- * @param row The row if the pixel, indexed from top left corner.
- * @param col The column of the pixel, indexed from top left corner.
- */
-int Bitmap_write_pixel(Bitmap *self, Rgb pixel, long row, long col) {
-    unsigned char pixel_data[3] = {pixel.blue, pixel.green, pixel.red};
-
-    return _write_at_pixel(self, row, col, pixel_data, sizeof(pixel_data));
-}
-
-/**
  * @brief Writes passed pixel rows to the output file using parallel MPI methods
  * 
  * @param self Bitmap object
@@ -140,7 +125,8 @@ int Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long rows_to_w
     unsigned char pixels_data[pixels_data_length];
 
     long index = 0;
-    for (long row = 0; row < rows_to_write; row++) {
+    // Rows in the bitmap are stored in reverse.
+    for (long row = rows_to_write - 1; row >= 0; row--) {
         for (long col = 0; col < self->num_cols; col++) {
             // add pixel to array to be written
             pixels_data[index]      = pixels[row][col].blue;
@@ -157,33 +143,21 @@ int Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long rows_to_w
         }
     }
 
-    return _write_at_pixel(self, start_row, 0, pixels_data, pixels_data_length);
+    long x = 0;
+    long y = self->num_rows - start_row;
+
+    // This is the offset where the block to write ends (exclusive), since the bitmap image is stored with rows in reverse order.
+    // This can also be thought of as the offset form the end of the file where the first pixel viewed (last pixel in the data) is written.
+    long pixel_offset = FILE_HEADER_SIZE + INFO_HEADER_SIZE + (y * (self->num_cols * BYTES_PER_PIXEL + self->_padding_size)) + (x * BYTES_PER_PIXEL);
+    // Convert offset to place in the file where the write should start.
+    pixel_offset -= pixels_data_length;
+
+    return _write_at(self, pixel_offset, pixels_data, pixels_data_length);
 }
 
 // Private methods
 
-/**
- * @brief Calculate the offset for a given pixel based on its coords.
- *        The formula takes into account both header sizes, the bytes per pixel value
- *        for each pixel and the amount of padding present in each row.
- * 
- * @param x X coordinate of the pixel with origin in the bottom left corner.
- * @param y Y coordinate of the pixel with origin in the bottom left corner.
- */
-int _write_at_pixel(const Bitmap *self, long row, long col, const unsigned char *data, long data_len) {
-    // Rows and columns (origin in top left) are converted to bitmap x and y (origin in bottom left).
-    long x = col;
-    // long y = self->num_rows - (row + 1);
-    long y = row;
-
-    long pixel_offset = FILE_HEADER_SIZE + INFO_HEADER_SIZE + (y * (self->num_cols * BYTES_PER_PIXEL + self->_padding_size)) + (x * BYTES_PER_PIXEL);
-
-    return  _write_at(self, pixel_offset, data, data_len);
-}
-
 int _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data) {
-    printf("writing data at offset: %ld\n", offset);
-
     // Both parallel and serial versions seek from the beginning of the file every time.
     #ifdef PARALLEL
     int result = MPI_File_write_at(self->_file, offset, data, len_data, MPI_UNSIGNED_CHAR, NULL);

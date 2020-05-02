@@ -9,13 +9,15 @@
 #include "mandelbrot.h"
 #include "args.h"
 #include "colormap.h"
+// The corresponding kernel.h header file exports the host functions declared here.
+// It should not be included in this file.
 
 /**
  * @brief Iterates on grid to generate mandelbrot set points
  * 
  * @param grid the grid
  */
-__global__ void _mandelbrot_kernel(Rgb **grid, long start_row, long num_rows, long num_cols, const Args *args) {
+__global__ void _mandelbrot_kernel(Rgb *grid, long start_row, long num_rows, long num_cols, const Args *args) {
     // Strided CUDA for loop over this process's grid, which is a portion of the entire image.
     long index = blockIdx.x * blockDim.x + threadIdx.x;
     long stride = blockDim.x * gridDim.x;
@@ -40,7 +42,7 @@ __global__ void _mandelbrot_kernel(Rgb **grid, long start_row, long num_rows, lo
         }
 
         // Do not use the start_row here. That gives the row for the whole image, not our section of the grid.
-        grid[row][col] = color;
+        grid[num_cols * row + col]= color;
 
         free(point);
     }
@@ -52,7 +54,7 @@ __global__ void _mandelbrot_kernel(Rgb **grid, long start_row, long num_rows, lo
  * @param num_iterations number of iterations per point
  * @param block_size number of threads per block
  */
-extern "C" void launch_mandelbrot_kernel(Rgb ** grid, long start_row, long num_rows, long num_cols, const Args *args){
+extern "C" void launch_mandelbrot_kernel(Rgb *grid, long start_row, long num_rows, long num_cols, const Args *args){
     long grid_area = num_cols * num_cols;
     int num_blocks = (grid_area + args->block_size - 1) / args->block_size;
 
@@ -74,5 +76,24 @@ extern "C" void cuda_init(int my_rank) {
     {
         fprintf(stderr, "Unable to have rank %d set to cuda device %d, error is %d \n", my_rank, (my_rank % cudaDeviceCount), cE);
         exit(-1);
+    }
+}
+
+extern "C" void *cuda_malloc(size_t size) {
+    void *mem = NULL;
+    cudaError_t error = cudaMallocManaged(&mem, size);
+
+    if (error != cudaSuccess) {
+        fprintf(stderr, "CUDA malloc failed with error code %d.\n", error);
+        exit(EXIT_FAILURE);
+    }
+
+    return mem;
+}
+
+extern "C" void cuda_free(void *mem) {
+    cudaError_t freeError = cudaFree(mem);
+    if (freeError != cudaSuccess) {
+        fprintf(stderr, "cudaFree failed with error code %d.", freeError);
     }
 }

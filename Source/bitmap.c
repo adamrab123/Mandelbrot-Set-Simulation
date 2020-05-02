@@ -119,7 +119,7 @@ int Bitmap_free(Bitmap *self) {
  * @param rows_to_write Number of pixel rows
  * @param start_row The pixel row index to start writing at, with origin in the top left corner.
  */
-int Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long rows_to_write) {
+int Bitmap_write_rows(Bitmap *self, Rgb *pixels, long start_row, long rows_to_write) {
     // compute padding needed and size of array to be written
     long pixels_data_length = rows_to_write * ((self->num_cols * BYTES_PER_PIXEL) + self->_padding_size);
     unsigned char pixels_data[pixels_data_length];
@@ -129,9 +129,9 @@ int Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long rows_to_w
     for (long row = rows_to_write - 1; row >= 0; row--) {
         for (long col = 0; col < self->num_cols; col++) {
             // add pixel to array to be written
-            pixels_data[index]      = pixels[row][col].blue;
-            pixels_data[index + 1]  = pixels[row][col].green;
-            pixels_data[index + 2]  = pixels[row][col].red;
+            pixels_data[index]      = pixels[self->num_cols * row + col].blue;
+            pixels_data[index + 1]  = pixels[self->num_cols * row + col].green;
+            pixels_data[index + 2]  = pixels[self->num_cols * row + col].red;
 
             index += 3;
         }

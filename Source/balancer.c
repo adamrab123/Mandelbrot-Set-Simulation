@@ -8,10 +8,7 @@
 
 #ifdef PARALLEL
 #include <mpi.h>
-
-// Cuda functions that only exist when kernel.cu is linked in parallel mode.
-extern void cuda_init(int my_rank);
-extern void launch_mandelbrot_kernel(Rgb ** grid, long num_rows, long num_cols, long grid_offset_y, const Args *args);
+#include "kernel.h"
 #endif
 
 void _free_grid(Rgb **grid, long num_rows);
@@ -43,7 +40,7 @@ void compute_mandelbrot_parallel(const Args *args) {
     long grid_rows = end_row - start_row;
     long grid_cols = bitmap_cols;
 
-    Rgb **grid = _allocate_grid(grid_rows, grid_cols);
+    Rgb *grid = (Rgb *)cuda_malloc(grid_rows * grid_cols * sizeof(Rgb));
 
     launch_mandelbrot_kernel(grid, start_row, grid_rows, grid_cols, args);
     MPI_Barrier(MPI_COMM_WORLD);
@@ -55,7 +52,7 @@ void compute_mandelbrot_parallel(const Args *args) {
         exit(EXIT_FAILURE);
     }
 
-    _free_grid(grid, grid_rows);
+    cuda_free(grid);
 
     result = Bitmap_free(bitmap);
 
@@ -74,7 +71,6 @@ void compute_mandelbrot_serial(const Args *args) {
     Args_get_bitmap_dims(args, &num_rows, &num_cols);
 
     Bitmap *bitmap = Bitmap_init(num_rows, num_cols, args->output_file);
-
     if (bitmap == NULL) {
         fprintf(stderr, "Error opening file %s\n", args->output_file);
         exit(EXIT_FAILURE);
@@ -82,7 +78,7 @@ void compute_mandelbrot_serial(const Args *args) {
 
     for (long row = 0; row < num_rows; row++) {
         // Grid will be used to contain a single row.
-        Rgb **row_grid = _allocate_grid(1, num_cols);
+        Rgb *row_grid = malloc(num_cols * sizeof(Rgb));
 
         for (long col = 0; col < num_cols; col++) {
             double c_real, c_imag;
@@ -98,7 +94,7 @@ void compute_mandelbrot_serial(const Args *args) {
                 color = RGB_BLACK;
             }
 
-            row_grid[0][col] = color;
+            row_grid[col] = color;
             free(point);
         }
 
@@ -109,7 +105,7 @@ void compute_mandelbrot_serial(const Args *args) {
             exit(EXIT_FAILURE);
         }
 
-        _free_grid(row_grid, 1);
+        free(row_grid);
     }
 
     int result = Bitmap_free(bitmap);

@@ -1,9 +1,14 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "balancer.h"
 #include "args.h"
 #include "bitmap.h"
 #include "mandelbrot.h"
 
 #ifdef PARALLEL
+#include <mpi.h>
+
 // Cuda functions that only exist when kernel.cu is linked in parallel mode.
 extern void cuda_init(int my_rank);
 extern void launch_mandelbrot_kernel(Rgb ** grid, long num_rows, long num_cols, long grid_offset_y, const Args *args);
@@ -33,16 +38,31 @@ void compute_mandelbrot_parallel(const Args *args) {
 
     Bitmap *bitmap = Bitmap_init(num_rows, num_cols, args->output_file);
 
+    if (bitmap == NULL) {
+        fprintf(stderr, "Error opening file %s\n", args->output_file);
+        exit(EXIT_FAILURE);
+    }
+
     long start_row = _get_start_row(num_rows);
 
     launch_mandelbrot_kernel(grid, start_row, num_rows, num_cols, args);
     MPI_Barrier(MPI_COMM_WORLD);
 
-    Bitmap_write_rows(bitmap, grid, start_row, num_cols);
+    int result = Bitmap_write_rows(bitmap, grid, start_row, num_cols);
+
+    if (result != 0) {
+        fprintf(stderr, "Error writing to file %s\n", args->output_file);
+        exit(EXIT_FAILURE);
+    }
 
     _free_grid(grid, num_rows);
 
-    Bitmap_free(bitmap);
+    result = Bitmap_free(bitmap);
+
+    if (result != 0) {
+        fprintf(stderr, "Error closing file %s\n", args->output_file);
+        exit(EXIT_FAILURE);
+    }
 
     MPI_Finalize();
 }
@@ -54,6 +74,11 @@ void compute_mandelbrot_serial(const Args *args) {
     Args_get_bitmap_dims(args, &num_rows, &num_cols);
 
     Bitmap *bitmap = Bitmap_init(num_rows, num_cols, args->output_file);
+
+    if (bitmap == NULL) {
+        fprintf(stderr, "Error opening file %s\n", args->output_file);
+        exit(EXIT_FAILURE);
+    }
 
     for (long row = 0; row < num_rows; row++) {
         // Grid will be used to contain a single row.
@@ -77,11 +102,22 @@ void compute_mandelbrot_serial(const Args *args) {
             free(point);
         }
 
-        Bitmap_write_rows(bitmap, row_grid, row, 1);
+        int result = Bitmap_write_rows(bitmap, row_grid, row, 1);
+
+        if (result != 0) {
+            fprintf(stderr, "Error writing to file %s\n", args->output_file);
+            exit(EXIT_FAILURE);
+        }
+
         _free_grid(row_grid, 1);
     }
 
-    Bitmap_free(bitmap);
+    int result = Bitmap_free(bitmap);
+
+    if (result != 0) {
+        fprintf(stderr, "Error closing file %s\n", args->output_file);
+        exit(EXIT_FAILURE);
+    }
 }
 #endif
 

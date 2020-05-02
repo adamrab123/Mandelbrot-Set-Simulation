@@ -47,8 +47,7 @@ Bitmap *Bitmap_init(long num_rows, long num_cols, const char *file_name) {
     // Open file in write, binary append mode.
     // Existing file of the same name will be deleted.
     #ifdef PARALLEL
-    self->_file;
-    int result = MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &self->_file);
+    int result = MPI_File_open(MPI_COMM_WORLD, file_name, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &self->_file);
 
     if (result != MPI_SUCCESS) {
         return NULL;
@@ -133,16 +132,19 @@ int Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long num_rows)
     // compute padding needed and size of array to be written
     long pixels_data_length = num_rows * ((self->num_cols * BYTES_PER_PIXEL) + self->_padding_size);
     unsigned char pixels_data[pixels_data_length];
+    // printf("%s: %d\n", __FILE__, __LINE__);
 
     long index = 0;
     for (long row = 0; row < num_rows; row++) {
         for (long col = 0; col < self->num_cols; col++) {
+            // printf("%s: %d\n", __FILE__, __LINE__);
             // add pixel to array to be written
             pixels_data[index]      = pixels[row][col].blue;
             pixels_data[index + 1]  = pixels[row][col].green;
             pixels_data[index + 2]  = pixels[row][col].red;
 
             index += 3;
+            // printf("%s: %d\n", __FILE__, __LINE__);
         }
 
         // add padding to end of row in array to be written
@@ -185,9 +187,9 @@ int _write_at(const Bitmap *self, long offset, const unsigned char *data, long l
     }
     #else
     int result1 = fseek(self->_file, offset, SEEK_SET);
-    int result2 = fwrite(data, len_data, 1, self->_file);
+    int bytes_written = fwrite(data, len_data, 1, self->_file);
 
-    if (result1 != 0 || result2 != 0) {
+    if (result1 != 0 || bytes_written == 0) {
         return 1;
     }
     #endif

@@ -11,7 +11,9 @@
 
 // Cuda functions that only exist when kernel.cu is linked in parallel mode.
 extern void cuda_init(int my_rank);
-extern void launch_mandelbrot_kernel(Rgb ** grid, long num_rows, long num_cols, long grid_offset_y, const Args *args);
+extern void launch_mandelbrot_kernel(Rgb *grid, long num_rows, long num_cols, long grid_offset_y, const Args *args);
+extern void *cuda_malloc(size_t size);
+extern void cuda_free(void *mem);
 #endif
 
 void _free_grid(Rgb **grid, long num_rows);
@@ -43,7 +45,7 @@ void compute_mandelbrot_parallel(const Args *args) {
     long grid_rows = end_row - start_row;
     long grid_cols = bitmap_cols;
 
-    Rgb *grid = malloc(grid_rows * grid_cols * sizeof(Rgb));
+    Rgb *grid = (Rgb *)cuda_malloc(grid_rows * grid_cols * sizeof(Rgb));
 
     launch_mandelbrot_kernel(grid, start_row, grid_rows, grid_cols, args);
     MPI_Barrier(MPI_COMM_WORLD);
@@ -55,7 +57,7 @@ void compute_mandelbrot_parallel(const Args *args) {
         exit(EXIT_FAILURE);
     }
 
-    free(grid);
+    cuda_free(grid);
 
     result = Bitmap_free(bitmap);
 
@@ -74,7 +76,6 @@ void compute_mandelbrot_serial(const Args *args) {
     Args_get_bitmap_dims(args, &num_rows, &num_cols);
 
     Bitmap *bitmap = Bitmap_init(num_rows, num_cols, args->output_file);
-
     if (bitmap == NULL) {
         fprintf(stderr, "Error opening file %s\n", args->output_file);
         exit(EXIT_FAILURE);

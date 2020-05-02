@@ -173,7 +173,8 @@ int Bitmap_write_rows(Bitmap *self, Rgb **pixels, long start_row, long rows_to_w
 int _write_at_pixel(const Bitmap *self, long row, long col, const unsigned char *data, long data_len) {
     // Rows and columns (origin in top left) are converted to bitmap x and y (origin in bottom left).
     long x = col;
-    long y = self->num_rows - (row + 1);
+    // long y = self->num_rows - (row + 1);
+    long y = row;
 
     long pixel_offset = FILE_HEADER_SIZE + INFO_HEADER_SIZE + (y * (self->num_cols * BYTES_PER_PIXEL + self->_padding_size)) + (x * BYTES_PER_PIXEL);
 
@@ -181,6 +182,8 @@ int _write_at_pixel(const Bitmap *self, long row, long col, const unsigned char 
 }
 
 int _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data) {
+    printf("writing data at offset: %ld\n", offset);
+
     // Both parallel and serial versions seek from the beginning of the file every time.
     #ifdef PARALLEL
     int result = MPI_File_write_at(self->_file, offset, data, len_data, MPI_UNSIGNED_CHAR, NULL);

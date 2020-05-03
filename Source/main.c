@@ -93,6 +93,10 @@ int main(int argc, char **argv) {
     compute_mandelbrot_serial(args);
     #endif
 
+    if (args->delete_output) {
+        remove(args->output_file);
+    }
+
     Args_free(args);
 
     return EXIT_SUCCESS;

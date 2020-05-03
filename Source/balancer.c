@@ -11,7 +11,7 @@
 #include "kernel.h"
 #endif
 
-void _get_slice(long total, long *start, long *end);
+void _get_slice(long num_jobs, long num_workers, long worker_index, long *start, long *end);
 
 #ifdef PARALLEL
 /**
@@ -30,26 +30,42 @@ void compute_mandelbrot_parallel(const Args *args) {
         exit(EXIT_FAILURE);
     }
 
+    int my_rank, num_ranks;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
+
     // Start inclusive, end exclusive.
     long start_row, end_row;
-    _get_slice(bitmap->num_rows, &start_row, &end_row);
-    long grid_rows = end_row - start_row;
+    // num_jobs, num_workers, worker_index, out start, out end.
+    _get_slice(bitmap->num_rows, num_ranks, my_rank, &start_row, &end_row);
+    // Among different processes, this value will either be n or n+1.
+    long all_grid_rows = end_row - start_row;
     long grid_cols = bitmap_cols;
 
-    // This method has error handling if the cuda malloc call fails.
-    Rgb *grid = (Rgb *)cuda_malloc(grid_rows * grid_cols * sizeof(Rgb));
+    for (int i = 0; i < args->writes_per_process; i++) {
+        // Ensure that every process makes the same number of writes (required by collective IO),
+        // Even if they have slightly different numbers of rows to write.
+        // Args has been validated to make sure that the number of writes is <= number of rows.
 
-    launch_mandelbrot_kernel(grid, start_row, grid_rows, grid_cols, args);
-    MPI_Barrier(MPI_COMM_WORLD);
+        // num_jobs, num_workers, worker_index, out start, out end.
+        _get_slice(all_grid_rows, args->writes_per_process, i, &start_row, &end_row);
+        rows_to_write = end_row - start_row;
 
-    int result = Bitmap_write_rows(bitmap, grid, start_row, grid_rows);
+        // This method has error handling if the cuda malloc call fails.
+        Rgb *grid = (Rgb *)cuda_malloc(rows_to_write * grid_cols * sizeof(Rgb));
 
-    if (result != 0) {
-        fprintf(stderr, "Error writing to file %s\n", args->output_file);
-        exit(EXIT_FAILURE);
+        launch_mandelbrot_kernel(grid, start_row, rows_to_write, grid_cols, args);
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        int result = Bitmap_write_rows(bitmap, grid, start_row, rows_to_write);
+
+        if (result != 0) {
+            fprintf(stderr, "Error writing to file %s\n", args->output_file);
+            exit(EXIT_FAILURE);
+        }
+
+        cuda_free(grid);
     }
-
-    cuda_free(grid);
 
     result = Bitmap_free(bitmap);
 
@@ -127,29 +143,23 @@ void compute_mandelbrot_serial(const Args *args) {
 //     Bitmap *bitmap = Bitmap_init(subimage_rows, subimage_cols, "foobar name");
 // }
 
-#ifdef PARALLEL
 // Determine which part of total this process should calculate.
 // start inclusive, end exclusive.
-void _get_slice(long total, long *start, long *end) {
-    int my_rank, num_ranks;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
+void _get_slice(long num_jobs, long num_workers, long worker_index, long *start, long *end) {
+    long quotient = num_jobs / num_workers;
+    long remainder = num_jobs % num_workers;
 
-    long quotient = total / num_ranks;
-    long remainder = total % num_ranks;
-
-    if (my_rank < remainder) {
+    if (worker_index < remainder) {
         // All processes of rank less than remainder pick up an extra value from the remainder.
         // Note that all processes before them have also picked up an extra value that must be taken into account in
         // their offset calculation.
-        *start = (quotient + 1) * my_rank;
+        *start = (quotient + 1) * worker_index;
         *end = *start + (quotient + 1);
     }
     else {
         // This process does not get an extra value from the remainder, but must take into account those that did before
         // it when calculating its offset.
-        *start = ((quotient + 1) * remainder) + (quotient * (my_rank - remainder));
+        *start = ((quotient + 1) * remainder) + (quotient * (worker_index - remainder));
         *end = *start + quotient;
     }
 }
-#endif

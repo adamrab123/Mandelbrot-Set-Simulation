@@ -128,7 +128,12 @@ int Bitmap_free(Bitmap *self) {
 int Bitmap_write_rows(Bitmap *self, Rgb *pixels, long start_row, long rows_to_write) {
     // compute padding needed and size of array to be written
     long pixels_data_length = rows_to_write * ((self->num_cols * BYTES_PER_PIXEL) + self->_padding_size);
-    unsigned char pixels_data[pixels_data_length];
+    unsigned char *pixels_data = malloc(pixels_data_length);
+
+    if (pixels_data == NULL) {
+        fprintf(stderr, "Unable to allocate %ld bytes of heap memory, exiting.\n", pixels_data_length);
+        exit(EXIT_FAILURE);
+    }
 
     long index = 0;
     // Rows in the bitmap are stored in reverse.
@@ -158,7 +163,10 @@ int Bitmap_write_rows(Bitmap *self, Rgb *pixels, long start_row, long rows_to_wr
     // Convert offset to place in the file where the write should start.
     pixel_offset -= pixels_data_length;
 
-    return _write_at(self, pixel_offset, pixels_data, pixels_data_length, COLLECTIVE);
+    int result = _write_at(self, pixel_offset, pixels_data, pixels_data_length, COLLECTIVE);
+    free(pixels_data);
+
+    return result;
 }
 
 // Private methods

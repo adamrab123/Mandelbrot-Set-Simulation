@@ -47,6 +47,9 @@ void write_yaml(const Args *args, tick time_secs, int my_rank, int num_ranks) {
     fprintf(yaml_file, "output_file: %s\n", args->output_file);
     fprintf(yaml_file, "block_size: %ld\n", args->block_size);
     fprintf(yaml_file, "chunks: %ld\n", args->chunks);
+    fprintf(yaml_file, "time_secs: %ull\n", time_secs);
+    fprintf(yaml_file, "rank: %d\n", my_rank);
+    fprintf(yaml_file, "num_ranks: %d\n", num_ranks);
 
     fclose(yaml_file);
 }

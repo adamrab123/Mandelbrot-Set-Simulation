@@ -40,7 +40,6 @@ Args *Args_init(int argc, char **argv) {
     strcpy(self->output_file, "output.bmp");
     self->block_size = 1;
     self->time_dir = NULL;
-    self->writes_per_process = 1;
     self->chunks = 1;
 
     int c;
@@ -59,13 +58,12 @@ Args *Args_init(int argc, char **argv) {
             {"block-size", required_argument, 0, 'b'},
             {"iterations", required_argument, 0, 'i'},
             {"time-dir", required_argument, 0, 't'},
-            {"writes_per_process", required_argument, 0, 'w'},
-            {"chunks", required_argument, 0, 'c'},
+            {"chunks", required_argument, 0, 'w'},
             {0, 0, 0, 0}
         };
         int option_index = 0;
 
-        c = getopt_long(argc, argv, ":x:X:y:Y:s:o:b:i:t:w:c:lx",
+        c = getopt_long(argc, argv, ":x:X:y:Y:s:o:b:i:t:c:lx",
                         long_options, &option_index);
 
         // Detect the end of the options.
@@ -118,10 +116,6 @@ Args *Args_init(int argc, char **argv) {
             case 't': {
                 self->time_dir= (char *)calloc(strlen(optarg) + 1, sizeof(char));
                 strcpy(self->time_dir, optarg);
-                break;
-            }
-            case 'w': {
-                self->writes_per_process = _parse_long(optarg, &parse_error);
                 break;
             }
             case 'c': {
@@ -273,12 +267,7 @@ bool _args_valid(Args *self) {
     }
 
     if (self->chunks <= 0) {
-        fprintf(stderr, "Image chunks per process must be positive.\n");
-        args_valid = false;
-    }
-
-    if (self->writes_per_process <= 0) {
-        fprintf(stderr, "Writes per process must be positive.\n");
+        fprintf(stderr, "Compute chunks per process must be positive.\n");
         args_valid = false;
     }
 

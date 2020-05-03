@@ -43,14 +43,14 @@ void compute_mandelbrot_parallel(const Args *args) {
     long all_grid_rows = bitmap_end_row - bitmap_start_row;
     long grid_cols = bitmap_cols;
 
-    for (int i = 0; i < args->writes_per_process; i++) {
+    for (int i = 0; i < args->chunks; i++) {
         // Ensure that every process makes the same number of writes (required by collective IO),
         // Even if they have slightly different numbers of rows to write.
         // Args has been validated to make sure that the number of writes is <= number of rows.
 
         // num_jobs, num_workers, worker_index, out start, out end.
         long grid_start_row, grid_end_row;
-        _get_slice(all_grid_rows, args->writes_per_process, i, &grid_start_row, &grid_end_row);
+        _get_slice(all_grid_rows, args->chunks, i, &grid_start_row, &grid_end_row);
         long sub_grid_rows = grid_end_row - grid_start_row;
 
         // This method has error handling if the cuda malloc call fails.
@@ -94,10 +94,10 @@ void compute_mandelbrot_serial(const Args *args) {
         exit(EXIT_FAILURE);
     }
 
-    for (int i = 0; i < args->writes_per_process; i++) {
+    for (int i = 0; i < args->chunks; i++) {
         long start_row, end_row;
         // num_jobs, num_workers, worker_index, out start, out end.
-        _get_slice(num_rows, args->writes_per_process, i, &start_row, &end_row);
+        _get_slice(num_rows, args->chunks, i, &start_row, &end_row);
         long rows_to_write = end_row - start_row;
 
         _compute_and_write_rows_serial(bitmap, args, start_row, rows_to_write, num_cols);

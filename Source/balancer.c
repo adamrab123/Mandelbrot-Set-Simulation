@@ -36,6 +36,7 @@ void compute_mandelbrot_parallel(const Args *args) {
     long grid_rows = end_row - start_row;
     long grid_cols = bitmap_cols;
 
+    // This method has error handling if the cuda malloc call fails.
     Rgb *grid = (Rgb *)cuda_malloc(grid_rows * grid_cols * sizeof(Rgb));
 
     launch_mandelbrot_kernel(grid, start_row, grid_rows, grid_cols, args);
@@ -72,7 +73,13 @@ void compute_mandelbrot_serial(const Args *args) {
 
     for (long row = 0; row < num_rows; row++) {
         // Grid will be used to contain a single row.
+        long bytes_needed = num_cols * sizeof(Rgb);
         Rgb *row_grid = malloc(num_cols * sizeof(Rgb));
+
+        if (row_grid == NULL) {
+            fprintf(stderr, "Unable to allocate %ld bytes of heap memory, exiting.\n", bytes_needed);
+            exit(EXIT_FAILURE);
+        }
 
         for (long col = 0; col < num_cols; col++) {
             double c_real, c_imag;

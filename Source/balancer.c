@@ -12,6 +12,7 @@
 #endif
 
 void _get_slice(long num_jobs, long num_workers, long worker_index, long *start, long *end);
+void _compute_and_write_rows_serial(Bitmap *bitmap, const Args *args, long start_row, long num_rows, long num_cols);
 
 #ifdef PARALLEL
 /**
@@ -87,19 +88,39 @@ void compute_mandelbrot_serial(const Args *args) {
         exit(EXIT_FAILURE);
     }
 
-    for (long row = 0; row < num_rows; row++) {
-        // Grid will be used to contain a single row.
-        long bytes_needed = num_cols * sizeof(Rgb);
-        Rgb *row_grid = malloc(num_cols * sizeof(Rgb));
+    for (int i = 0; i < args->writes_per_process; i++) {
+        long start_row, end_row;
+        // num_jobs, num_workers, worker_index, out start, out end.
+        _get_slice(num_rows, args->writes_per_process, i, &start_row, &end_row);
+        long rows_to_write = end_row - start_row;
 
-        if (row_grid == NULL) {
-            fprintf(stderr, "Unable to allocate %ld bytes of heap memory, exiting.\n", bytes_needed);
-            exit(EXIT_FAILURE);
-        }
+        _compute_and_write_rows_serial(bitmap, args, start_row, rows_to_write, num_cols);
+    }
 
-        for (long col = 0; col < num_cols; col++) {
+    int result = Bitmap_free(bitmap);
+
+    if (result != 0) {
+        fprintf(stderr, "Error closing file %s\n", args->output_file);
+        exit(EXIT_FAILURE);
+    }
+}
+
+// Computes a subset of the rows and columns and writes them to the bitmap file.
+void _compute_and_write_rows_serial(Bitmap *bitmap, const Args *args, long start_row, long num_rows, long num_cols) {
+    long bytes_needed = num_rows * num_cols * sizeof(Rgb);
+    Rgb *grid = malloc(bytes_needed);
+
+    if (grid == NULL) {
+        fprintf(stderr, "Unable to allocate %ld bytes of heap memory, exiting.\n", bytes_needed);
+        exit(EXIT_FAILURE);
+    }
+
+    for (long grid_row = 0; grid_row < num_rows; grid_row++) {
+        for (long grid_col = 0; grid_col < num_cols; grid_col++) {
+
             double c_real, c_imag;
-            Args_bitmap_to_complex(args, row, col, &c_real, &c_imag);
+            // Offset the row so it is the row of the whole image, not the local grid.
+            Args_bitmap_to_complex(args, start_row + grid_row, grid_col, &c_real, &c_imag);
             MandelbrotPoint *point = Mandelbrot_iterate(c_real, c_imag, args->iterations);
 
             Rgb color;
@@ -111,37 +132,24 @@ void compute_mandelbrot_serial(const Args *args) {
                 color = RGB_BLACK;
             }
 
-            row_grid[col] = color;
+            grid[num_cols * grid_row + grid_col] = color;
             free(point);
         }
-
-        int result = Bitmap_write_rows(bitmap, row_grid, row, 1);
-
-        if (result != 0) {
-            fprintf(stderr, "Error writing to file %s\n", args->output_file);
-            exit(EXIT_FAILURE);
-        }
-
-        free(row_grid);
     }
 
-    int result = Bitmap_free(bitmap);
+    int result = Bitmap_write_rows(bitmap, grid, start_row, num_rows);
 
     if (result != 0) {
-        fprintf(stderr, "Error closing file %s\n", args->output_file);
+        fprintf(stderr, "Error writing to file %s\n", args->output_file);
         exit(EXIT_FAILURE);
     }
+
+    free(grid);
 }
+
 #endif
 
-// void _make_image_chunks(Rgb *pixels, long pixels_rows, long pixels_cols, long num_images) {
-//     // naming convention for image chunks is args->output_file_<row>_<column>.bmp
 
-//     long subimage_rows = pixels_rows;
-
-
-//     Bitmap *bitmap = Bitmap_init(subimage_rows, subimage_cols, "foobar name");
-// }
 
 // Determine which part of total this process should calculate.
 // start inclusive, end exclusive.

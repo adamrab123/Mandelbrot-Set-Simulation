@@ -11,9 +11,7 @@
 #include "kernel.h"
 #endif
 
-void _free_grid(Rgb **grid, long num_rows);
-void _get_row_range(Bitmap *bitmap, long *start_row, long *end_row);
-Rgb **_allocate_grid(long num_rows, long num_cols);
+void _get_slice(long total, long *start, long *end);
 
 #ifdef PARALLEL
 /**
@@ -34,9 +32,11 @@ void compute_mandelbrot_parallel(const Args *args) {
 
     // Start inclusive, end exclusive.
     long start_row, end_row;
-    _get_row_range(bitmap, &start_row, &end_row);
+    _get_slice(bitmap->num_rows, &start_row, &end_row);
     long grid_rows = end_row - start_row;
     long grid_cols = bitmap_cols;
+
+    printf("Grid rows and cols: %ld %ld\n", grid_rows, grid_cols);
 
     Rgb *grid = (Rgb *)cuda_malloc(grid_rows * grid_cols * sizeof(Rgb));
 
@@ -113,37 +113,38 @@ void compute_mandelbrot_serial(const Args *args) {
 }
 #endif
 
+// void _make_image_chunks(Rgb *pixels, long pixels_rows, long pixels_cols, long num_images) {
+//     // naming convention for image chunks is args->output_file_<row>_<column>.bmp
+
+//     long subimage_rows = pixels_rows;
+
+
+//     Bitmap *bitmap = Bitmap_init(subimage_rows, subimage_cols, "foobar name");
+// }
+
 #ifdef PARALLEL
-/**
- * @brief Calculate the row in the bitmap image grid that this process should begin calculating.
- *
- * @param num_cols
- */
-void _get_row_range(Bitmap *bitmap, long *start_row, long *end_row) {
+// Determine which part of total this process should calculate.
+// start inclusive, end exclusive.
+void _get_slice(long total, long *start, long *end) {
     int my_rank, num_ranks;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-    // If the total number of rows can be divided evenly among the ranks, each rank gets an equal number of rows.
-    if (bitmap->num_rows % num_ranks == 0) {
-        long equal_row_size = bitmap->num_rows / num_ranks;
-        *start_row = equal_row_size * my_rank;
-        *end_row = *start_row + equal_row_size;
+    long quotient = total / num_ranks;
+    long remainder = total % num_ranks;
+
+    if (my_rank < remainder) {
+        // All processes of rank less than remainder pick up an extra value from the remainder.
+        // Note that all processes before them have also picked up an extra value that must be taken into account in
+        // their offset calculation.
+        *start = (quotient + 1) * my_rank;
+        *end = *start + (quotient + 1);
     }
     else {
-        // If the total number of rows cannot be divided evenly among the ranks, ranks 0 to n-1 get
-        // chunks size computed from integer division, and the last rank gets the remainder.
-        if (my_rank == num_ranks - 1) {
-            // The last rank gets the remainder.
-            long remainder = bitmap->num_rows % num_ranks;
-            *start_row = bitmap->num_rows - remainder;
-            *end_row = *start_row + remainder;
-        }
-        else {
-            long equal_row_size = bitmap->num_rows / (num_ranks - 1);
-            *start_row = equal_row_size * my_rank;
-            *end_row = *start_row + equal_row_size;
-        }
+        // This process does not get an extra value from the remainder, but must take into account those that did before
+        // it when calculating its offset.
+        *start = ((quotient + 1) * remainder) + (quotient * (my_rank - remainder));
+        *end = *start + quotient;
     }
 }
 #endif

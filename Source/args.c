@@ -240,6 +240,11 @@ bool _args_valid(Args *self) {
         args_valid = false;
     }
 
+    if (self->step_size <= 0) {
+        fprintf(stderr, "Step size must be greater than 0.\n");
+        args_valid = false;
+    }
+
     if (self->step_size >= x_range) {
         fprintf(stderr, "Step size cannot be larger than the range of x values.\n");
         args_valid = false;

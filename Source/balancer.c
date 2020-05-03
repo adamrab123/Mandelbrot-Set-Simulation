@@ -11,7 +11,7 @@
 #include "kernel.h"
 #endif
 
-void _get_slice(long total, long *start, long *end);
+void _get_slice(long num_jobs, long num_workers, long worker_index, long *start, long *end);
 
 #ifdef PARALLEL
 /**
@@ -32,9 +32,13 @@ void compute_mandelbrot_parallel(const Args *args) {
         exit(EXIT_FAILURE);
     }
 
+    int my_rank, num_ranks;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
+
     // Start inclusive, end exclusive.
     long start_row, end_row;
-    _get_slice(bitmap->num_rows, &start_row, &end_row);
+    _get_slice(bitmap->num_rows, num_ranks, my_rank, &start_row, &end_row);
     long grid_rows = end_row - start_row;
     long grid_cols = bitmap_cols;
 
@@ -117,38 +121,51 @@ void compute_mandelbrot_serial(const Args *args) {
 }
 #endif
 
-// void _make_image_chunks(Rgb *pixels, long pixels_rows, long pixels_cols, long num_images) {
-//     // naming convention for image chunks is args->output_file_<row>_<column>.bmp
+void _make_subimages(Rgb *pixels, long pixels_rows, long pixels_cols, long subimage_rows, long subimage_cols) {
+    // naming convention for image chunks is args->output_file_<row>_<column>.bmp
 
-//     long subimage_rows = pixels_rows;
+    for(long row = 0; row < subimage_rows; row++) {
+        for(long col = 0; col < subimage_cols; col++) {
+            long start_row, end_row;
+            _get_slice(pixels_rows, subimage_rows, row, &start_row, &end_row);
+            long num_rows = end_row - start_row;
+
+            long start_col, end_col;
+            _get_slice(pixels_cols, subimage_cols, col, &start_col, &end_col);
+            long num_cols = end_col - start_col;
+
+            Rgb *start_ptr = pixels + (pixels_cols * start_row + start_col);
+        }
+    }
+
+    for (long image_index = 0; image_index < num_images; image_index++) {
+        long start_col, end_col;
+        _get_slice(pixels_cols, num_images, image_index, &start_col, &end_col);
 
 
-//     Bitmap *bitmap = Bitmap_init(subimage_rows, subimage_cols, "foobar name");
-// }
+    }
 
-#ifdef PARALLEL
-// Determine which part of total this process should calculate.
+
+    Bitmap *bitmap = Bitmap_init(subimage_rows, subimage_cols, "foobar name");
+}
+
+// Determine which part of num_jobs this process should calculate.
 // start inclusive, end exclusive.
-void _get_slice(long total, long *start, long *end) {
-    int my_rank, num_ranks;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
+void _get_slice(long num_jobs, long num_workers, long worker_index, long *start, long *end) {
+    long quotient = num_jobs / num_workers;
+    long remainder = num_jobs % num_workers;
 
-    long quotient = total / num_ranks;
-    long remainder = total % num_ranks;
-
-    if (my_rank < remainder) {
+    if (worker_index < remainder) {
         // All processes of rank less than remainder pick up an extra value from the remainder.
         // Note that all processes before them have also picked up an extra value that must be taken into account in
         // their offset calculation.
-        *start = (quotient + 1) * my_rank;
+        *start = (quotient + 1) * worker_index;
         *end = *start + (quotient + 1);
     }
     else {
         // This process does not get an extra value from the remainder, but must take into account those that did before
         // it when calculating its offset.
-        *start = ((quotient + 1) * remainder) + (quotient * (my_rank - remainder));
+        *start = ((quotient + 1) * remainder) + (quotient * (worker_index - remainder));
         *end = *start + quotient;
     }
 }
-#endif

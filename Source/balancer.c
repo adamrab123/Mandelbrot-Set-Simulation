@@ -36,8 +36,6 @@ void compute_mandelbrot_parallel(const Args *args) {
     long grid_rows = end_row - start_row;
     long grid_cols = bitmap_cols;
 
-    printf("Grid rows and cols: %ld %ld\n", grid_rows, grid_cols);
-
     Rgb *grid = (Rgb *)cuda_malloc(grid_rows * grid_cols * sizeof(Rgb));
 
     launch_mandelbrot_kernel(grid, start_row, grid_rows, grid_cols, args);

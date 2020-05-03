@@ -15,6 +15,7 @@ typedef struct {
     char *output_file;
     long block_size;
     long chunks;
+    char *time_dir;
 } Args;
 
 Args *Args_init(int argc, char **argv);

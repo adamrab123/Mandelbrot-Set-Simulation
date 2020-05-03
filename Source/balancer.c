@@ -22,8 +22,6 @@ Rgb **_allocate_grid(long num_rows, long num_cols);
  * @param args the command line arguements
  */
 void compute_mandelbrot_parallel(const Args *args) {
-    MPI_Init(NULL, NULL);
-
     // Dimensions of the whole bitmap.
     long bitmap_rows, bitmap_cols;
     Args_get_bitmap_dims(args, &bitmap_rows, &bitmap_cols);
@@ -60,8 +58,6 @@ void compute_mandelbrot_parallel(const Args *args) {
         fprintf(stderr, "Error closing file %s\n", args->output_file);
         exit(EXIT_FAILURE);
     }
-
-    MPI_Finalize();
 }
 #endif
 

@@ -16,11 +16,13 @@ typedef struct {
     double step_size;
     long iterations;
     char *output_file;
-    // Parallel builds only.
-    long block_size;
-    char *time_dir;
     long chunks;
     bool delete_output;
+    // Arguments for parallel builds only.
+    #ifdef PARALLEL
+    long block_size;
+    char *time_dir;
+    #endif
 } Args;
 
 Args *Args_init(int argc, char **argv);

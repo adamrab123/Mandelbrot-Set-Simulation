@@ -44,21 +44,30 @@ Args *Args_init(int argc, char **argv) {
         {"y-max", required_argument, 0, 'Y'},
         {"step-size", required_argument, 0, 's'},
         {"output-file", required_argument, 0, 'o'},
-        {"block-size", required_argument, 0, 'b'},
         {"iterations", required_argument, 0, 'i'},
-        {"time-dir", required_argument, 0, 't'},
-        {"chunks", required_argument, 0, 'w'},
+        {"chunks", required_argument, 0, 'c'},
         {"delete-output", no_argument, (int *)&self->delete_output, 'd'},
+        #ifdef PARALLEL
+        {"block-size", required_argument, 0, 'b'},
+        {"time-dir", required_argument, 0, 't'},
+        #endif
         {0, 0, 0, 0}
     };
+
+    // : after char means requires arg.
+    // :: after char means optional arg.
+    // Nothing after char means no arg.
+    char option_string[30];
+    strcpy(option_string, "x:X:y:Y:s:o:i:c:d");
+
+    #ifdef PARALLEL
+    strcat(option_string, "b:t:");
+    #endif
 
     while (true) {
         int option_index = 0;
 
-        // : after char means required arg.
-        // :: after char means optional arg.
-        // Nothing after char means no arg.
-        c = getopt_long(argc, argv, ":x:X:y:Y:s:o:b:i:t:dc:lx",
+        c = getopt_long(argc, argv, option_string,
                         long_options, &option_index);
 
         // Detect the end of the options.
@@ -107,6 +116,16 @@ Args *Args_init(int argc, char **argv) {
                 strcpy(self->output_file, optarg);
                 break;
             }
+            case 'c': {
+                self->chunks = _parse_long(optarg, &parse_error);
+                break;
+            }
+            case 'd': {
+                self->delete_output = true;
+                break;
+            }
+
+            #ifdef PARALLEL
             case 'b': {
                 self->block_size = _parse_long(optarg, &parse_error);
                 break;
@@ -116,37 +135,10 @@ Args *Args_init(int argc, char **argv) {
                 strcpy(self->time_dir, optarg);
                 break;
             }
-            case 'c': {
-                self->chunks = _parse_long(optarg, &parse_error);
-                break;
-            }
-            case 'd': {
-                self->delete_output = true;
-                break;
-            }
-            case '?': {
-                const char *option = argv[optind - 1];
-                if (optind == 1) {
-                    // Prevent from displaying program name as invalid option.
-                    option = argv[optind];
-                }
+            #endif
 
-                fprintf(stderr, "Unknown option '%s'\n", option);
-                parse_error = true;
-                break;
-            }
             default: {
-                // If a parse error was already encountered, it cannot tell whether required args were provided.
-                if (!parse_error) {
-                    const char *option = argv[optind - 1];
-                    if (optind == 1) {
-                        // Prevent from displaying program name as requiring an argument.
-                        option = argv[optind];
-                    }
-
-                    fprintf(stderr, "Option '%s' requires an argument.\n", option);
-                    parse_error = true;
-                }
+                parse_error = true;
             }
         }
     }
@@ -171,7 +163,11 @@ Args *Args_init(int argc, char **argv) {
 
 void Args_free(Args *self) {
     free(self->output_file);
+
+    #ifdef PARALLEL
     free(self->time_dir);
+    #endif
+
     free(self);
 }
 
@@ -262,15 +258,17 @@ bool _args_valid(Args *self) {
         args_valid = false;
     }
 
-    if (self->block_size <= 0) {
-        fprintf(stderr, "Thread block size must be positive.\n");
-        args_valid = false;
-    }
-
     if (self->chunks <= 0) {
         fprintf(stderr, "Compute chunks per process must be positive.\n");
         args_valid = false;
     }
+
+    #ifdef PARALLEL
+    if (self->block_size <= 0) {
+        fprintf(stderr, "Thread block size must be positive.\n");
+        args_valid = false;
+    }
+    #endif
 
     return args_valid;
 }
@@ -284,8 +282,10 @@ void _init_defaults(Args *self) {
     self->iterations = 100;
     self->output_file = (char *)calloc(100, sizeof(char));
     strcpy(self->output_file, "output.bmp");
-    self->block_size = 1;
-    self->time_dir = NULL;
     self->chunks = 1;
     self->delete_output = false;
+    #ifdef PARALLEL
+    self->block_size = 1;
+    self->time_dir = NULL;
+    #endif
 }

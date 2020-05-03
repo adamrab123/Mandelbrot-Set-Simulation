@@ -28,7 +28,6 @@ static __inline__ tick getticks(void) {
 
     return (((unsigned long long)tbu0) << 32) | tbl;
 }
-#endif
 
 void write_yaml(const Args *args, double time_secs, int my_rank, int num_ranks) {
     const int MAX_FILE_NAME_LEN = 256;
@@ -54,6 +53,7 @@ void write_yaml(const Args *args, double time_secs, int my_rank, int num_ranks) 
 
     fclose(yaml_file);
 }
+#endif
 
 int main(int argc, char **argv) {
     Args *args = Args_init(argc, argv);

@@ -24,6 +24,7 @@ module load gcc/7.4.0/1
 module load spectrum-mpi
 module load cuda
 
-time mpirun -hostfile /tmp/hosts.$SLURM_JOB_ID -np $SLURM_NPROCS "$HOME/scratch/Mandelbrot-Set-Simulation/Build/mandelbrot" -d "$@"
+# Do not put quotes around $@ or it will not be properly expended.
+mpirun -hostfile /tmp/hosts.$SLURM_JOB_ID -np $SLURM_NPROCS $@
 
 rm /tmp/hosts.$SLURM_JOB_ID

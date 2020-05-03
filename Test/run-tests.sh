@@ -23,18 +23,25 @@ function run_tests() {
 
     mkdir -p "$time_dir"
 
-    slurm_script="$(dirname "$0")/slurmTest.sh"
+    slurm_script="$(dirname $0)/slurmTest.sh"
+
+    # Executable path is passed in to the slurm script.
+    # Change this path if this is not where your executable is.
+    exe="$(dirname $0)/../Build/mandelbrot"
 
     sbatch \
         --nodes="$num_nodes" \
         --ntasks-per-node="$ranks_per_node" \
         --gres=gpu:"$num_gpus" \
-        --block-size="$block_size" \
-        --step-size="$step_size" \
-        --iterations="$iterations" \
-        --time-dir="$time_dir" \
-        --output="$time_dir/"log_%j.out
-        "$slurm_script" -c"$chunk_size"
+        --output="$time_dir/"log_%j.out \
+        "$slurm_script" \
+            "$exe" \
+            --chunks="$chunk_size" \
+            --block-size="$block_size" \
+            --step-size="$step_size" \
+            --iterations="$iterations" \
+            --time-dir="$time_dir" \
+            --delete-output
 }
 
 # BEGIN SCRIPT EXECUTION
@@ -43,7 +50,7 @@ output_dir=Output
 
 # Clean up after previous tests if necessary.
 # Prompt user to make sure data is not lost.
-[ -d "$output"] && rm -rI "$output_dir"
+[ -d "$output_dir" ] && rm -rI "$output_dir"
 
 # Step sizes used for weak scaling tests only.
 step_sizes=(0.032 0.016 0.008 0.004 0.002 0.001 0.0005)

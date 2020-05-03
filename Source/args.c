@@ -11,6 +11,7 @@
 
 double _parse_double(const char *str, bool *error);
 long _parse_long(const char *str, bool *error);
+bool _args_valid(Args *self);
 
 /**
  * @brief Parses the given argc,argv and modifies program parameters 
@@ -154,7 +155,7 @@ Args *Args_init(int argc, char **argv) {
     }
 
     // Wait until the end to exit so all bad command line arguments can be processed and displayed.
-    if (parse_error) {
+    if (parse_error || !_args_valid(self)) {
         exit(1);
     }
 
@@ -215,4 +216,48 @@ long _parse_long(const char *str, bool *error) {
     }
 
     return result;
+}
+
+bool _args_valid(Args *self) {
+    double x_range = self->x_max - self->x_min;
+    double y_range = self->y_max - self->y_min;
+
+    bool args_valid = true;
+
+    if (x_range <= 0) {
+        fprintf(stderr, "Minimum x value must be less than maximum x value.\n");
+        args_valid = false;
+    }
+
+    if (y_range <= 0) {
+        fprintf(stderr, "Minimum y value must be less than maximum y value.\n");
+        args_valid = false;
+    }
+
+    if (self->step_size >= x_range) {
+        fprintf(stderr, "Step size cannot be larger than the range of x values.\n");
+        args_valid = false;
+    }
+
+    if (self->step_size >= y_range) {
+        fprintf(stderr, "Step size cannot be larger than the range of y values.\n");
+        args_valid = false;
+    }
+
+    if (self->iterations <= 0) {
+        fprintf(stderr, "Maximum number of iterations must be positive.\n");
+        args_valid = false;
+    }
+
+    if (self->block_size <= 0) {
+        fprintf(stderr, "Thread block size must be positive.\n");
+        args_valid = false;
+    }
+
+    if (self->chunks <= 0) {
+        fprintf(stderr, "Image chunks per process must be positive.\n");
+        args_valid = false;
+    }
+
+    return args_valid;
 }

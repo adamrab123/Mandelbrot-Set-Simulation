@@ -55,7 +55,10 @@ Args *Args_init(int argc, char **argv) {
     while (true) {
         int option_index = 0;
 
-        c = getopt_long(argc, argv, ":x:X:y:Y:s:o:b:i:t:d:c:lx",
+        // : after char means required arg.
+        // :: after char means optional arg.
+        // Nothing after char means no arg.
+        c = getopt_long(argc, argv, ":x:X:y:Y:s:o:b:i:t:dc:lx",
                         long_options, &option_index);
 
         // Detect the end of the options.
@@ -115,6 +118,10 @@ Args *Args_init(int argc, char **argv) {
             }
             case 'c': {
                 self->chunks = _parse_long(optarg, &parse_error);
+                break;
+            }
+            case 'd': {
+                self->delete_output = true;
                 break;
             }
             case '?': {

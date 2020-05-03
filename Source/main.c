@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 
 #include "args.h"
@@ -51,10 +52,10 @@ void write_yaml(const Args *args, double time_secs, int my_rank, int num_ranks) 
     fprintf(yaml_file, "rank: %d\n", my_rank);
     fprintf(yaml_file, "num_ranks: %d\n", num_ranks);
 
-    output_file = fopen(args->output_file, "rb");
+    FILE *output_file = fopen(args->output_file, "rb");
     fseek(output_file, 0L, SEEK_END);
     long file_size = ftell(output_file);
-    fclose(args->output_file);
+    fclose(output_file);
 
     fprintf(yaml_file, "bytes_written: %ld\n", file_size);
 

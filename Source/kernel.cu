@@ -55,7 +55,7 @@ __global__ void _mandelbrot_kernel(Rgb *grid, long start_row, long num_rows, lon
  * @param block_size number of threads per block
  */
 extern "C" void launch_mandelbrot_kernel(Rgb *grid, long start_row, long num_rows, long num_cols, const Args *args){
-    long grid_area = num_cols * num_cols;
+    long grid_area = num_rows * num_cols;
     int num_blocks = (grid_area + args->block_size - 1) / args->block_size;
 
     // Launch kernel

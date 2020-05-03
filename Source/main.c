@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <math.h>
 
 #include "args.h"
 #include "balancer.h"
@@ -55,18 +56,23 @@ void write_yaml(const Args *args, double time_secs, int my_rank, int num_ranks) 
 }
 
 int main(int argc, char **argv) {
-    // Hard code arguments for now.
     Args *args = Args_init(argc, argv);
 
+    long num_rows, num_cols;
+    Args_get_bitmap_dims(args, &num_rows, &num_cols);
+
     #ifdef PARALLEL
+    // Start parallel execution, potentially with timer data.
     MPI_Init(&argc, &argv);
 
     tick start = getticks();
 
-    int my_rank = 0;
-    int num_ranks = 0;
+    int my_rank, num_ranks;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
+
+    // Set the max number of writes based on the image size and number of ranks.
+    args->writes_per_process = fmin(args->writes_per_process, num_rows / num_ranks);
 
     compute_mandelbrot_parallel(args);
 
@@ -80,6 +86,10 @@ int main(int argc, char **argv) {
 
     MPI_Finalize();
     #else
+    // Set the max number of writes based on the image size.
+    args->writes_per_process = fmin(args->writes_per_process, num_rows);
+
+    // Start serial execution.
     compute_mandelbrot_serial(args);
     #endif
 

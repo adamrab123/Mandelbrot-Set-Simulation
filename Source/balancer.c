@@ -117,36 +117,6 @@ void compute_mandelbrot_serial(const Args *args) {
 }
 #endif
 
-/**
- * @brief Allocates the grid of size @p num_rows by @p num_cols using cudaMallocManaged
- * 
- * @param num_rows the width of the grid
- * @param num_cols the height of the grid
- * 
- * @return grid
- */
-Rgb **_allocate_grid(long num_rows, long num_cols){
-    Rgb **grid = NULL;
-
-    // allocate rows
-    grid = calloc(num_rows, sizeof(Rgb *)); 
-
-    // allocate columns
-    for (long i = 0; i < num_rows; i++){
-        grid[i] = calloc(num_cols, sizeof(Rgb)); 
-    }
-
-    return grid;
-}
-
-void _free_grid(Rgb **grid, long num_rows) {
-    for (long i = 0; i < num_rows; i++){
-        free(grid[i]);
-    }
-
-    free(grid);
-}
-
 #ifdef PARALLEL
 /**
  * @brief Calculate the row in the bitmap image grid that this process should begin calculating.

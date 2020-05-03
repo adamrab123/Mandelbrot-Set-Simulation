@@ -39,6 +39,7 @@ Args *Args_init(int argc, char **argv) {
     strcpy(self->output_file, "output.bmp");
     self->block_size = 1;
     self->chunks = 1;
+    self->time_dir = NULL;
 
     int c;
     bool parse_error = false;
@@ -56,11 +57,12 @@ Args *Args_init(int argc, char **argv) {
             {"block-size", required_argument, 0, 'b'},
             {"iterations", required_argument, 0, 'i'},
             {"chunks", required_argument, 0, 'c'},
+            {"time-dir", required_argument, 0, 't'},
             {0, 0, 0, 0}
         };
         int option_index = 0;
 
-        c = getopt_long(argc, argv, ":x:X:y:Y:s:o:b:i:c:lx",
+        c = getopt_long(argc, argv, ":x:X:y:Y:s:o:b:i:t:c:lx",
                         long_options, &option_index);
 
         // Detect the end of the options.
@@ -114,6 +116,11 @@ Args *Args_init(int argc, char **argv) {
                 self->chunks = _parse_long(optarg, &parse_error);
                 break;
             }
+            case 't': {
+                self->time_dir= (char *)calloc(strlen(optarg) + 1, sizeof(char));
+                strcpy(self->time_dir, optarg);
+                break;
+            }
             case '?': {
                 const char *option = argv[optind - 1];
                 if (optind == 1) {
@@ -162,6 +169,7 @@ Args *Args_init(int argc, char **argv) {
 
 void Args_free(Args *self) {
     free(self->output_file);
+    free(self->time_dir);
     free(self);
 }
 

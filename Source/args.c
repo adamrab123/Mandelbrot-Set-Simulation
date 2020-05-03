@@ -38,8 +38,9 @@ Args *Args_init(int argc, char **argv) {
     self->output_file = (char *)calloc(100, sizeof(char));
     strcpy(self->output_file, "output.bmp");
     self->block_size = 1;
-    self->chunks = 1;
     self->time_dir = NULL;
+    self->writes_per_process = 1;
+    self->chunks = 1;
 
     int c;
     bool parse_error = false;
@@ -168,6 +169,11 @@ Args *Args_init(int argc, char **argv) {
         exit(1);
     }
 
+    // Cap the number of writes per process at max number of rows a process can have.
+    long num_rows, num_cols;
+    Args_get_bitmap_dims(self, &num_rows, &num_cols);
+    self->writes_per_process = min(self->writes_per_process, num_rows);
+
     return self;
 
 }
@@ -272,6 +278,11 @@ bool _args_valid(Args *self) {
 
     if (self->chunks <= 0) {
         fprintf(stderr, "Image chunks per process must be positive.\n");
+        args_valid = false;
+    }
+
+    if (self->writes_per_process <= 0) {
+        fprintf(stderr, "Writes per process must be positive.\n");
         args_valid = false;
     }
 

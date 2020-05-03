@@ -13,11 +13,10 @@ typedef struct {
     double step_size;
     long iterations;
     char *output_file;
-    long chunks;
     // Parallel builds only.
     long block_size;
     char *time_dir;
-    long writes_per_process;
+    long chunks;
 } Args;
 
 Args *Args_init(int argc, char **argv);

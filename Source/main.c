@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
     // Set the max number of writes based on the image size and number of ranks.
-    args->writes_per_process = fmin(args->writes_per_process, num_rows / num_ranks);
+    args->chunks = fmin(args->chunks, num_rows / num_ranks);
 
     compute_mandelbrot_parallel(args);
 
@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
     MPI_Finalize();
     #else
     // Set the max number of writes based on the image size.
-    args->writes_per_process = fmin(args->writes_per_process, num_rows);
+    args->chunks = fmin(args->chunks, num_rows);
 
     // Start serial execution.
     compute_mandelbrot_serial(args);

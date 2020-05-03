@@ -92,11 +92,6 @@ Args *Args_init(int argc, char **argv) {
                 break;
             }
             case 's': {
-                // The steps conversion requires adding a null byte to the end of the array before converting
-                int length = sizeof(optarg) / sizeof(optarg[0]);
-                char *word = (char*)calloc(length + 1, sizeof(char));
-                strcpy(word, optarg);
-                word[length] = '\0';
                 self->step_size = _parse_double(optarg, &parse_error);
                 break;
             }

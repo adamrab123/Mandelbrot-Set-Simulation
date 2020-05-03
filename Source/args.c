@@ -101,7 +101,9 @@ Args *Args_init(int argc, char **argv) {
             }
             case 'o': {
                 // No verification for file name here, it will be done when the file is opened.
-                self->output_file = optarg;
+                free(self->output_file);
+                self->output_file = (char *)calloc(strlen(optarg) + 1, sizeof(char));
+                strcpy(self->output_file, optarg);
                 break;
             }
             case 'b': {

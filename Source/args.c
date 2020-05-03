@@ -170,11 +170,6 @@ Args *Args_init(int argc, char **argv) {
         exit(1);
     }
 
-    // Cap the number of writes per process at max number of rows a process can have.
-    long num_rows, num_cols;
-    Args_get_bitmap_dims(self, &num_rows, &num_cols);
-    self->writes_per_process = fmin(self->writes_per_process, num_rows);
-
     return self;
 
 }

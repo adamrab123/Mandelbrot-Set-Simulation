@@ -36,11 +36,11 @@ void compute_mandelbrot_parallel(const Args *args) {
     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
     // Start inclusive, end exclusive.
-    long start_row, end_row;
+    long bitmap_start_row, bitmap_end_row;
     // num_jobs, num_workers, worker_index, out start, out end.
-    _get_slice(bitmap->num_rows, num_ranks, my_rank, &start_row, &end_row);
+    _get_slice(bitmap->num_rows, num_ranks, my_rank, &bitmap_start_row, &bitmap_end_row);
     // Among different processes, this value will either be n or n+1.
-    long all_grid_rows = end_row - start_row;
+    long all_grid_rows = bitmap_end_row - bitmap_start_row;
     long grid_cols = bitmap_cols;
 
     for (int i = 0; i < args->writes_per_process; i++) {
@@ -49,16 +49,22 @@ void compute_mandelbrot_parallel(const Args *args) {
         // Args has been validated to make sure that the number of writes is <= number of rows.
 
         // num_jobs, num_workers, worker_index, out start, out end.
-        _get_slice(all_grid_rows, args->writes_per_process, i, &start_row, &end_row);
-        rows_to_write = end_row - start_row;
+        long grid_start_row, grid_end_row;
+        _get_slice(all_grid_rows, args->writes_per_process, i, &grid_start_row, &grid_end_row);
+        long sub_grid_rows = grid_end_row - grid_start_row;
 
         // This method has error handling if the cuda malloc call fails.
-        Rgb *grid = (Rgb *)cuda_malloc(rows_to_write * grid_cols * sizeof(Rgb));
+        Rgb *grid = (Rgb *)cuda_malloc(sub_grid_rows * grid_cols * sizeof(Rgb));
 
-        launch_mandelbrot_kernel(grid, start_row, rows_to_write, grid_cols, args);
+        // The row that this subgrid starts on out of the whole bitmap image.
+        long absolute_start_row = bitmap_start_row + grid_start_row;
+
+        // Start row is used to determine which point in the whole image it is calculating, not where to write it in the
+        // grid.
+        launch_mandelbrot_kernel(grid, absolute_start_row, sub_grid_rows, grid_cols, args);
         MPI_Barrier(MPI_COMM_WORLD);
 
-        int result = Bitmap_write_rows(bitmap, grid, start_row, rows_to_write);
+        int result = Bitmap_write_rows(bitmap, grid, absolute_start_row, sub_grid_rows);
 
         if (result != 0) {
             fprintf(stderr, "Error writing to file %s\n", args->output_file);
@@ -68,7 +74,7 @@ void compute_mandelbrot_parallel(const Args *args) {
         cuda_free(grid);
     }
 
-    result = Bitmap_free(bitmap);
+    int result = Bitmap_free(bitmap);
 
     if (result != 0) {
         fprintf(stderr, "Error closing file %s\n", args->output_file);

@@ -56,13 +56,14 @@ Args *Args_init(int argc, char **argv) {
             {"output-file", required_argument, 0, 'o'},
             {"block-size", required_argument, 0, 'b'},
             {"iterations", required_argument, 0, 'i'},
-            {"chunks", required_argument, 0, 'c'},
             {"time-dir", required_argument, 0, 't'},
+            {"writes_per_process", required_argument, 0, 'w'},
+            {"chunks", required_argument, 0, 'c'},
             {0, 0, 0, 0}
         };
         int option_index = 0;
 
-        c = getopt_long(argc, argv, ":x:X:y:Y:s:o:b:i:t:c:lx",
+        c = getopt_long(argc, argv, ":x:X:y:Y:s:o:b:i:t:w:c:lx",
                         long_options, &option_index);
 
         // Detect the end of the options.
@@ -112,13 +113,17 @@ Args *Args_init(int argc, char **argv) {
                 self->block_size = _parse_long(optarg, &parse_error);
                 break;
             }
-            case 'c': {
-                self->chunks = _parse_long(optarg, &parse_error);
-                break;
-            }
             case 't': {
                 self->time_dir= (char *)calloc(strlen(optarg) + 1, sizeof(char));
                 strcpy(self->time_dir, optarg);
+                break;
+            }
+            case 'w': {
+                self->writes_per_process = _parse_long(optarg, &parse_error);
+                break;
+            }
+            case 'c': {
+                self->chunks = _parse_long(optarg, &parse_error);
                 break;
             }
             case '?': {

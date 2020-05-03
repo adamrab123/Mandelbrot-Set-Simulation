@@ -1,6 +1,9 @@
 #ifndef ARGS_H
 #define ARGS_H
 
+#include <stdlib.h>
+#include <stdbool.h>
+
 /**
  * @brief Contains information about the optional command 
  *      line parameters passed into our simulation
@@ -17,6 +20,7 @@ typedef struct {
     long block_size;
     char *time_dir;
     long chunks;
+    bool delete_output;
 } Args;
 
 Args *Args_init(int argc, char **argv);

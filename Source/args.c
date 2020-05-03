@@ -13,6 +13,7 @@
 double _parse_double(const char *str, bool *error);
 long _parse_long(const char *str, bool *error);
 bool _args_valid(Args *self);
+void _init_defaults(Args *self);
 
 /**
  * @brief Parses the given argc,argv and modifies program parameters 
@@ -29,41 +30,35 @@ bool _args_valid(Args *self);
 Args *Args_init(int argc, char **argv) {
     Args *self = (Args *)malloc(sizeof(Args));
 
-    // Set all parameters to their default values.
-    self->x_min = -2.1;
-    self->x_max = 1;
-    self->y_min = -1.5;
-    self->y_max = 1.5;
-    self->step_size = 0.01;
-    self->iterations = 100;
-    self->output_file = (char *)calloc(100, sizeof(char));
-    strcpy(self->output_file, "output.bmp");
-    self->block_size = 1;
-    self->time_dir = NULL;
-    self->chunks = 1;
+    _init_defaults(self);
 
     int c;
     bool parse_error = false;
 
-    while (1) {
-        static struct option long_options[] = {
-            // These options don’t set a flag.
-            // We distinguish them by their indices.
-            {"x-min", required_argument, 0, 'x'},
-            {"x-max", required_argument, 0, 'X'},
-            {"y-min", required_argument, 0, 'y'},
-            {"y-max", required_argument, 0, 'Y'},
-            {"step-size", required_argument, 0, 's'},
-            {"output-file", required_argument, 0, 'o'},
-            {"block-size", required_argument, 0, 'b'},
-            {"iterations", required_argument, 0, 'i'},
-            {"time-dir", required_argument, 0, 't'},
-            {"chunks", required_argument, 0, 'w'},
-            {0, 0, 0, 0}
-        };
+    struct option long_options[] = {
+        // These options don’t set a flag.
+        // We distinguish them by their indices.
+        {"x-min", required_argument, 0, 'x'},
+        {"x-max", required_argument, 0, 'X'},
+        {"y-min", required_argument, 0, 'y'},
+        {"y-max", required_argument, 0, 'Y'},
+        {"step-size", required_argument, 0, 's'},
+        {"output-file", required_argument, 0, 'o'},
+        {"block-size", required_argument, 0, 'b'},
+        {"iterations", required_argument, 0, 'i'},
+        {"time-dir", required_argument, 0, 't'},
+        {"chunks", required_argument, 0, 'w'},
+        {"delete-output", no_argument, (int *)&self->delete_output, 'd'},
+        {0, 0, 0, 0}
+    };
+
+    while (true) {
         int option_index = 0;
 
-        c = getopt_long(argc, argv, ":x:X:y:Y:s:o:b:i:t:c:lx",
+        // : after char means required arg.
+        // :: after char means optional arg.
+        // Nothing after char means no arg.
+        c = getopt_long(argc, argv, ":x:X:y:Y:s:o:b:i:t:dc:lx",
                         long_options, &option_index);
 
         // Detect the end of the options.
@@ -71,12 +66,15 @@ Args *Args_init(int argc, char **argv) {
             break;
         }
 
-        switch (c)
-        {
+        switch (c) {
             case 0: {
                 // For long options without a corresponding short option.
-                // We do not have any of these, so do nothing.
-                break;
+                // We do not have any of these.
+
+                // If this option set a flag, we have already taken care of it.
+                if (long_options[option_index].flag != 0) {
+                    break;
+                }
             }
             case 'x': {
                 self->x_min = _parse_double(optarg, &parse_error);
@@ -122,6 +120,10 @@ Args *Args_init(int argc, char **argv) {
                 self->chunks = _parse_long(optarg, &parse_error);
                 break;
             }
+            case 'd': {
+                self->delete_output = true;
+                break;
+            }
             case '?': {
                 const char *option = argv[optind - 1];
                 if (optind == 1) {
@@ -161,11 +163,10 @@ Args *Args_init(int argc, char **argv) {
 
     // Wait until the end to exit so all bad command line arguments can be processed and displayed.
     if (parse_error || !_args_valid(self)) {
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     return self;
-
 }
 
 void Args_free(Args *self) {
@@ -272,4 +273,19 @@ bool _args_valid(Args *self) {
     }
 
     return args_valid;
+}
+
+void _init_defaults(Args *self) {
+    self->x_min = -2.1;
+    self->x_max = 1;
+    self->y_min = -1.5;
+    self->y_max = 1.5;
+    self->step_size = 0.01;
+    self->iterations = 100;
+    self->output_file = (char *)calloc(100, sizeof(char));
+    strcpy(self->output_file, "output.bmp");
+    self->block_size = 1;
+    self->time_dir = NULL;
+    self->chunks = 1;
+    self->delete_output = false;
 }

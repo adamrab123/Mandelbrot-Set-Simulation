@@ -2,8 +2,10 @@ Build/*
 **/*.out
 **/*.bmp
 **/*.swp
+**/*.yaml
 .ipynb_checkpoints/*
 .vscode
 # Ignore my sync script.
 sync*
 output/*
+

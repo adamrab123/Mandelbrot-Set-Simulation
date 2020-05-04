@@ -62,7 +62,6 @@ long compute_mandelbrot_parallel(const Args *args) {
         // Start row is used to determine which point in the whole image it is calculating, not where to write it in the
         // grid.
         launch_mandelbrot_kernel(grid, absolute_start_row, sub_grid_rows, grid_cols, args);
-        MPI_Barrier(MPI_COMM_WORLD);
 
         int result = Bitmap_write_rows(bitmap, grid, absolute_start_row, sub_grid_rows);
 

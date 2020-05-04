@@ -1,5 +1,6 @@
 Build/*
 **/*.out
+**/*.png
 **/*.bmp
 **/*.swp
 **/*.yaml

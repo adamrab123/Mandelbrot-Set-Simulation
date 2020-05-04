@@ -5,7 +5,7 @@ function run_tests() {
     chunk_size="$2"
     num_ranks="$3"
     block_size="$4"
-    output_dir="$5"
+    local output_dir="$5"
 
     iterations=100
     num_gpus=1

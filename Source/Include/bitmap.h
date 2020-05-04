@@ -20,6 +20,7 @@ typedef struct {
 
     // Private
     int _padding_size;
+    long _bytes_written;
 
     #ifdef PARALLEL
     MPI_File _file;
@@ -32,5 +33,7 @@ Bitmap *Bitmap_init(long num_rows, long num_cols, const char *image_file_name);
 int Bitmap_free(Bitmap *self);
 
 int Bitmap_write_rows(Bitmap *self, Rgb *pixels, long start_row, long num_rows);
+
+long Bitmap_bytes_written(Bitmap *self);
 
 #endif

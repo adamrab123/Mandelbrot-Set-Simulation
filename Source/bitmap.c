@@ -21,7 +21,7 @@ enum WriteType { COLLECTIVE, NON_COLLECTIVE };
 typedef enum WriteType WriteType;
 
 // Function declarations
-int _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data, WriteType write_type);
+int _write_at(Bitmap *self, long offset, const unsigned char *data, long len_data, WriteType write_type);
 unsigned char *_create_bmp_file_header(const Bitmap *self);
 unsigned char *_create_bmp_info_header(const Bitmap *self);
 
@@ -37,6 +37,8 @@ unsigned char *_create_bmp_info_header(const Bitmap *self);
  */
 Bitmap *Bitmap_init(long num_rows, long num_cols, const char *file_name) {
     Bitmap *self = calloc(1, sizeof(Bitmap));
+
+    self->_bytes_written = 0;
 
     self->num_cols = num_cols;
     self->num_rows = num_rows;
@@ -172,7 +174,7 @@ int Bitmap_write_rows(Bitmap *self, Rgb *pixels, long start_row, long rows_to_wr
 // Private methods
 
 // Last parameter is ignored in serial version.
-int _write_at(const Bitmap *self, long offset, const unsigned char *data, long len_data, WriteType write_type) {
+int _write_at(Bitmap *self, long offset, const unsigned char *data, long len_data, WriteType write_type) {
     // Both parallel and serial versions seek from the beginning of the file every time.
     #ifdef PARALLEL
     int result = 0;
@@ -187,6 +189,9 @@ int _write_at(const Bitmap *self, long offset, const unsigned char *data, long l
     if (result != MPI_SUCCESS) {
         return 1;
     }
+    else {
+        self->_bytes_written += len_data;
+    }
     #else
 
     int result1 = fseek(self->_file, offset, SEEK_SET);
@@ -195,9 +200,16 @@ int _write_at(const Bitmap *self, long offset, const unsigned char *data, long l
     if (result1 != 0 || bytes_written == 0) {
         return 1;
     }
+    else {
+        self->_bytes_written += len_data;
+    }
     #endif
 
     return 0;
+}
+
+long Bitmap_bytes_written(Bitmap *self) {
+    return self->_bytes_written;
 }
 
 /**

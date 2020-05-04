@@ -20,7 +20,7 @@ void _compute_and_write_rows_serial(Bitmap *bitmap, const Args *args, long start
  * 
  * @param args the command line arguements
  */
-void compute_mandelbrot_parallel(const Args *args) {
+long compute_mandelbrot_parallel(const Args *args) {
     // Dimensions of the whole bitmap.
     long bitmap_rows, bitmap_cols;
     Args_get_bitmap_dims(args, &bitmap_rows, &bitmap_cols);
@@ -74,17 +74,20 @@ void compute_mandelbrot_parallel(const Args *args) {
         cuda_free(grid);
     }
 
+    long bytes_written = Bitmap_bytes_written(bitmap);
     int result = Bitmap_free(bitmap);
 
     if (result != 0) {
         fprintf(stderr, "Error closing file %s\n", args->output_file);
         exit(EXIT_FAILURE);
     }
+
+    return bytes_written;
 }
 #endif
 
 #ifndef PARALLEL
-void compute_mandelbrot_serial(const Args *args) {
+long compute_mandelbrot_serial(const Args *args) {
     long num_rows, num_cols;
     Args_get_bitmap_dims(args, &num_rows, &num_cols);
 
@@ -103,12 +106,15 @@ void compute_mandelbrot_serial(const Args *args) {
         _compute_and_write_rows_serial(bitmap, args, start_row, rows_to_write, num_cols);
     }
 
+    long bytes_written = Bitmap_bytes_written(bitmap);
     int result = Bitmap_free(bitmap);
 
     if (result != 0) {
         fprintf(stderr, "Error closing file %s\n", args->output_file);
         exit(EXIT_FAILURE);
     }
+
+    return bytes_written;
 }
 
 // Computes a subset of the rows and columns and writes them to the bitmap file.

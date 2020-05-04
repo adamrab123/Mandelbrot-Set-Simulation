@@ -11,9 +11,9 @@
 
 #ifdef PARALLEL
 #include<mpi.h>
-void compute_mandelbrot_parallel(const Args *args);
+long compute_mandelbrot_parallel(const Args *args);
 #endif
 
-void compute_mandelbrot_serial(const Args *args);
+long compute_mandelbrot_serial(const Args *args);
 
 #endif // MBMPI_H

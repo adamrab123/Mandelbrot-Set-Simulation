@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <sys/stat.h>
 
 #include "args.h"
 #include "balancer.h"
@@ -30,13 +31,17 @@ static __inline__ tick getticks(void) {
     return (((unsigned long long)tbu0) << 32) | tbl;
 }
 
-void write_yaml(const Args *args, double time_secs, int my_rank, int num_ranks) {
+void write_yaml(const Args *args, double time_secs, long bytes_written, int my_rank, int num_ranks) {
     const int MAX_FILE_NAME_LEN = 256;
 
     char *yaml_file_name = calloc(MAX_FILE_NAME_LEN, sizeof(char));
     sprintf(yaml_file_name, "%s/%d.yaml", args->time_dir, my_rank);
 
     FILE *yaml_file = fopen(yaml_file_name, "a");
+    if (yaml_file == NULL) {
+        fprintf(stderr, "Failed to create file %s\n", yaml_file_name);
+        exit(EXIT_FAILURE);
+    }
 
     // Write test data for this rank to its yaml file.
     fprintf(yaml_file, "x_min: %.15f\n", args->x_min);
@@ -51,13 +56,7 @@ void write_yaml(const Args *args, double time_secs, int my_rank, int num_ranks) 
     fprintf(yaml_file, "time_secs: %.15f\n", time_secs);
     fprintf(yaml_file, "rank: %d\n", my_rank);
     fprintf(yaml_file, "num_ranks: %d\n", num_ranks);
-
-    FILE *output_file = fopen(args->output_file, "rb");
-    fseek(output_file, 0L, SEEK_END);
-    long file_size = ftell(output_file);
-    fclose(output_file);
-
-    fprintf(yaml_file, "bytes_written: %ld\n", file_size);
+    fprintf(yaml_file, "bytes_written: %ld\n", bytes_written);
 
     fclose(yaml_file);
 }
@@ -82,17 +81,20 @@ int main(int argc, char **argv) {
     // Set the max number of writes based on the image size and number of ranks.
     args->chunks = fmin(args->chunks, num_rows / num_ranks);
 
-    compute_mandelbrot_parallel(args);
+    long bytes_written = compute_mandelbrot_parallel(args);
 
     tick end = getticks();
 
     double time_secs = (end - start) / (double)CLOCK_HERTZ;
 
     if (args->time_dir != NULL) {
-        write_yaml(args, time_secs, my_rank, num_ranks);
+        // Wait for all processes to finish writing and data to be flushed.
+
+        write_yaml(args, time_secs, bytes_written, my_rank, num_ranks);
     }
 
     MPI_Finalize();
+
     #else
     // Set the max number of writes based on the image size.
     args->chunks = fmin(args->chunks, num_rows);

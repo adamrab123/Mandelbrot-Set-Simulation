@@ -65,13 +65,13 @@ do
     num_ranks="${num_ranks_total[$i]}"
     block_size="${block_sizes[$i]}"
 
-    # Strong scaling test 1.
-    step_size=0.001
-    run_tests "$step_size" "$chunks" "$num_ranks" "$block_size" "$output_dir"/StrongLow
+    # # Strong scaling test 1.
+    # step_size=0.001
+    # run_tests "$step_size" "$chunks" "$num_ranks" "$block_size" "$output_dir"/StrongLow
 
-    # Strong scaling test 2.
-    step_size=0.0001
-    run_tests "$step_size" "$chunks" "$num_ranks" "$block_size" "$output_dir"/StrongHigh
+    # # Strong scaling test 2.
+    # step_size=0.0001
+    # run_tests "$step_size" "$chunks" "$num_ranks" "$block_size" "$output_dir"/StrongHigh
 
     # Weak scaling test.
     step_size="${step_sizes[$i]}"

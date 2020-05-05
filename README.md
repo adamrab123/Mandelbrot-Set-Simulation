@@ -1,184 +1,160 @@
 # Mandelbrot Set Simulation
 
-<p align="center">   <img src=image.gif> </p>
+- A C program that generates fractal images based on the Mandelbrot set using MPI and CUDA to parallelize computations and file writing.
 
+- All paths referenced in this document are relative to the top level directory for this project.
 
+## Building
 
-- Overleaf document: https://www.overleaf.com/2373935774gwqzxqfbdqkf
+- The program has two build modes: serial and parallel.
 
-## Floating Point Arithmetic
+    - Both build modes will create a directory called `Build` that will contain the output executable called `mandelbrot`.
 
-- A tradeoff between accuracy and performance must be made.
+    - The different build modes are implemented using preprocessor directives to change which parts of the program are compiled.
 
-- We should determine what the maximum possible image size we may want to generate is, and not pick a type that has significantly more precision than that.
+    - This allows zero code duplication between the serial and parallel versions of the program.
 
-- Options:
+- To build the program in parallel mode, run `make parallel` from the top level directory.
 
-    - **double**: 8 Bytes.
-        - lower bound: ±2.23 x 10^-308
-        - upper bound: ±1.80 x 10^308
-        - significant digits: 15-18, typically 16
-    
-    - **long double**: 16 Bytes.
-        - 128 bit quad precision float.
-        - lower bound: ±3.36 x 10^-4932
-        - upper bound: ±1.18 x 10^4932
-        - significant digits: 33-36
+    - This will build a version of the program that parallelizes computation and output generation using MPI and CUDA.
 
-        - Should hopefully be enough for our uses.
+- To build the program in serial mode, run `make serial` from the top level directory.
 
-    - **double double**: Not available on Aimos.
+    - This will build a version of the program that can be run on a normal computer without MPI or CUDA support.
 
-    - **__float128 (quad precision floating point)**: Not available on Aimos.
-        - Woudl be impelemented the same as long double with 16 bytes.
-    
-    - External libraries that are probably not worth the hassle:
-        - **GMP**
-        - **MPFR**
+    - This version has no parallelization, and runs significantly slower than the parallelized version.
 
-## Image Formatting
+## Output Formatting
 
-- **.ppm**: Plain text image specification that results in very large files, but can be written in ASCII without a library.
+- In both parallel and serial modes, the program will output the visualization as a bitmap file (.bmp).
 
-    - May require converting to another image format later anyways.
+- Bitamps are an uncompressed format, so if the image is large, it may be helpful to convert it to a lossless compression format like PNG before moving or opening it.
 
-    - High resolution images may be prohibitively large.
+    - The output file `output.bmp` can be converted to a PNG using the `Imagemagick` command `convert output.bmp output.png`.
 
-- **Custom Encoding Converted with Python**: Have the C program output a text file of a custom encoding we create, and write a Python script to convert it to a lossless image file type like .PNG (not .JPG).
+    - `Imagemagick` is installed on Aimos and can be used to convert images before downloading them to view.
 
-    - Requires two steps to generate image.
+- The image is generated on a complex number plane, with the real axis on the x, and the complex axis on the y.
 
-    - May require moving this large image file across Aimos internet connections.
+- The resolution of the image is determined by the step size, which is the distance between points on the x and y axis calculated by the program.
 
-- **Bitmap File format (BMP)**: Each pixel encoded in a byte, with some sort of metadata header at the beginning of the file.
+- The image will be *(xmax - xmin) / step* pixels wide and *(ymax - ymin) / step* pixels tall.
 
-    - Maybe slightly more difficult to write than ppm, but probably more compact before compression.
-
-    - Wikipedia says zip can provide effective lossless compression for moving the data off Aimos.
-    
-    - [Bitmap File Format Specifications](https://web.archive.org/web/20080912171714/http://www.fortunecity.com/skyscraper/windows/364/bmpffrmt.html)
+- See [Command Line Arguments](#command-line-arguments) for more information about altering the output image.
 
 ## Command Line Arguments
 
-- Use the `getopt.h` standard header file for parsing flags.
+- This program takes long and short form command line arguments formatted in standard Unix fashion.
 
-- Potential arguments to support:
+- Command line arguments are implemented using the C `getopt` library.
 
-    - `--xmin, -x`
-        - default: -2
+- All arguments are optional, and have sensible default values.
 
-    - `--xmax, -X`
-        - default: 2
+- All arguments are enabled in parallel builds, but some arguments are not supported in serial builds.
 
-    - `--ymin, -y`
-        - default: -2
+- The program will use all MPI ranks available when launched using the `mpirun` command, so this is not specified by the command line arguments.
 
-    - `--ymax, -Y`
-        - default: -2
+- If arguments are used incorrectly, the program will provide an error message and exit.
 
-    - `--step-size, -s`: Counting from zero, this amount will be added in the x or y direction to determine every point that will be calculated within the x and y bounds.
+### Arguments Supported in Parallel and Serial Modes
 
-        - default: 0.001
+- `-x, --x-min=XMIN`
+    - The minimum value on the x axis (real axis) to compute.
+    - default: -2.1
 
-        - The image dimensions will be *(xmax - xmin) / step* and *(xmax - xmin) / step*.
-
-    - `--iterations, -i`: The number of iterations to perform before determining whether a number belongs in the set or not.
-        - default: 20
-
-    - `--output-file, -o`: The name of the file to output the image to if chunks=1, or the name of the directory to output files to if chunks>1.
-
-    - `--block-size, -b`: The number of threads per block to use in the computation.
-- default: TBD
-        
-- The number of blocks to use will be computed from the total number of points to calculate and this value.
-        
-- `--chunk, -c`: The number of different bitmap image segments of the full image to generate.
-    
+- `-X, --x-max=XMAX`
+    - The maximum value on the x axis (real axis) to compute.
     - default: 1
+
+- `-y, --y-min=YMIN`
+    - The minimum value on the y axis (imaginary axis) to compute.
+    - default: -1.5
+
+- `-Y, --y-max=YMAX`
+    - The maximum value on the y axis (imaginary axis) to compute.
+    - default: 1.5
+
+- `-s, --step-size=STEPSIZE`
+    - The amount moved between points in the x and y directions to determine the unique points that will be calculated within the x and y bounds.
+
+    - default: 0.01
+
+- `-i, --iterations=ITERATIONS`
+    - The number of iterations of the mandelbrot set formula to perform before determining whether a number belongs in the mandelbrot set or not.
+
+    - default: 100
+
+- `-o, --output-file=OUTPUTFILE`
+    - The name of the file to output the image to.
+
+    - The program does not create subidrectories, so any subidrectories containing this output file must exist before the program is run.
+
+    - default: output.bmp
     
-    - Files will be named `<row><col>.bmp`.
-            - Indexing starts at 0, and row 0 column 0 is the top left corner.
+- `-c, --chunks=CHUNKS`
+    - The number of chunks per process to perform the computations and file writes in.
 
-## Math
+    - default: 1
 
-- The x axis is the real axis, the y axis is the imaginary axis.
+    - See [Computation Chunking](#computation-chunking) for more information about this option.
 
-- Each point on this plane represents c omplex number c.
+- `-d, --delete-output`
 
-- c is in the mandelbrot set iff Z_{n+1} = Z_n^2 + c does not diverge when iterated a high number of times.
-    - Seed this function with Z_n = 0.
+    - Delete the output file immediately after the program finishes.
 
-    - Once Z_{n+1} > 2, it is known to diverge and is automatically not in the set.
-        - If this does not happen after the chosen iteration count, the number is considered a part of the set.
-        - The number of iterations performed before this happens can be used to determine the color of the point c on the visual.
+    - This is useful for running batch testing with the `-t` option, so that a lot of large image files are not generated in addition to the timing data.
 
-- The Mandelbrot set is known to by symmetric about the real axis, so we only need to compute the top half of the image.
+### Arguments Supported in Parallel Mode Only
 
-- Operations can be implemented using the `complex.h` standard header file.
-    - Make sure to use the functions defined for `long double`s.
+- `-b, --block-size=BLOCKSIZE`
+    - The number of CUDA threads per block per process to use in the computation.
 
-- An example of the math without the `complex.h` header is [here](https://www.geeksforgeeks.org/fractals-in-cc/).
+    - default: 64
 
-- Checking if we are outside radius 2 from the origin involves the point distance formula:
+- `-t, --time-dir=DIRECTORY`
 
-    - *sqrt[(x2 - x1)^2 + (y2 - y1)^2] -> sqrt[c_real^2 + c_img^2] < 2*
-    - By squaring each side we can save an operation: *c_real^2 + c_img^2 < 4*.
+    - Have each rank/process time its execution, assuming a hardware clock rate of 512000000Hz, and write data about its configuration, run time, and bytes written to a file called *<rank>.yaml* in the specified subidrectory.
 
-## Coloring
+    - The directory will not be created by the program, so it must exist before the program is run.
 
-- Still need to research this more.
+    - The timing is implemented using assembly code that only builds on Aimos, so this option is disabled in serial builds.
 
-- [A quick overview with a formula](https://linas.org/art-gallery/escape/smooth.html)
+## Computation Chunking
 
-- [A more in depth article](http://www.iquilezles.org/www/articles/mset_smooth/mset_smooth.htm)
+- Without computation chunking (`--chunks=1`), compuation of the image is carried out in the following way:
 
-## Division of Labor
+    - Serial mode
+        - An array the size of the entire image is allocated on the heap, and filled with RGB values of colors one by one.
 
-- argument parsing
-- bitmap/image generation
-- actual math
-- thread/block divisions
+        - The entire array is written in one call to the output file.
 
-- Adam: arg parsing
-- Ethan: math
-- John: bitmap/image generation + coloring algorithm
-- Shashank: thread/block divisions
+    - Parallel mode
+        - If given *N* ranks, the image is divded into *N* horizontal groups, and each rank is given a group to calculate.
 
-## Coding Conventions
+        - Each rank allocates an array of size equal to its group on the device, and passes this array to the device to be filled in by the threads.
 
-- Doxygen blocks for public functions
+            - The computation is divded evenly among the threads and carried out in parallel.
 
-- Python style naming conventions.
-    - snake_case for variables and functions.
-    - PascalCase for types.
-    - alllowercase for file names/headers.
-    - _leading_underscore for private functions.
+        - Once the device code for a rank finishes, it writes its group of data to the output file using one MPI collective parallel IO write call.
 
-## File sizes
+- The above usually provides the best performance by minimizing the amount of file writes, but can be problematic for larger files.
 
-- Compression results depend on the file contents.
+    - If the amount of memory needed to allocate is too large, or the amount of data being pushed to the file in a single write is too large, the program could crash.
 
-- The tests below were performed on a 24,884,010 byte bmp file.
+- Compute chunking alleviates this load by allowing each process to perform the allocate, compute, write steps serially in a specified amount of subgroups, instead of as one big group.
 
-    - Convert bmp to png: 3,346,416 bytes.
+    - Within each subgroup, computation is still parallelized at the thread level.
 
-    - bmp to zip archive: 4,220,059 bytes
+    - If given chunk size *C*, each process will divide its group of pixels into *C* subgroups by row.
+    
+    - For each subgroup, the memory is allocated, the computation is performed, the data is written, and the memory is freed before continuing computation of the next subgroup.
 
-- To approximate compressed file size given one dimension pixel count of a square image:
+- If the number of chunks specified is greater than the number of rows a process has to compute, it will be set to the number of rows that process has to compute.
 
-    - d = number of pixels along one dimension of the image.
+- Examples:
 
-    - fc = compression factor. Factor by which the compression algorithm will reduce image size.
+    - An invocation with 1 rank, blocksize of 1, and chunk size of 64 will compute and write to the file in 64 serial chunks.
 
-    - compressed size in bytes = (d^2 * 3) / cf
+        - Using rank and blocksize of 1 is comparable to running the program in serial mode.
 
-    - Assuming fc = 4 (conservative estimate based on the test file which had cf ~= 7):
-
-        - d = 10,000: 75,000,000 bytes (75 Mb)
-        - d = 100,000: 7,500,000,000 bytes (7.5 Gb)
-        - d = 1,000,000: 750,000,000,000 bytes (750 Gb)
-
-## Limits
-- Max size of `long` is 9,223,372,036,854,775,807 (thousands of terabytes), which should be more bytes than our file ever will be.
-
-- `double` gives 15 decimal points of precision, which is the best we can do on the GPU.
+    - An invocation with 1 rank, blocksize of 32, and chunk size of 64 will compute the output in 64 serial groups, each group using 32 threads to parallelize computation, and write these to the file as 64 chunks serially.

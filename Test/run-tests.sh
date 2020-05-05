@@ -53,7 +53,7 @@ output_dir=Output
 [ -d "$output_dir" ] && rm -rI "$output_dir"
 
 # Step sizes used for weak scaling tests only.
-step_sizes=(0.032 0.016 0.008 0.004 0.002 0.001 0.0005)
+step_sizes=(0.05 0.0355 0.0252 0.0179 0.0127 0.0090 0.0064)
 num_ranks_total=(1 2 4 8 16 32 64)
 chunk_sizes=(64 32 16 8 2 4 1)
 block_sizes=(16 32 64 128 256 512 1024)

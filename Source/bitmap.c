@@ -172,8 +172,16 @@ int Bitmap_write_rows(Bitmap *self, Rgb *pixels, long start_row, long rows_to_wr
 }
 
 // Private methods
-
-// Last parameter is ignored in serial version.
+/**
+ * @brief 
+ * 
+ * @param self Bitmap object
+ * @param offset Pixel offset (image treated as 1D array)
+ * @param data Pixel data expressed as 1D unsigned char array
+ * @param len_data Length in bytes of @p data
+ * @param write_type (ignored in serial version)
+ * @return int 0 if MPI_File_write_at succeeds, 1 if not 
+ */
 int _write_at(Bitmap *self, long offset, const unsigned char *data, long len_data, WriteType write_type) {
     // Both parallel and serial versions seek from the beginning of the file every time.
     #ifdef PARALLEL
@@ -208,6 +216,12 @@ int _write_at(Bitmap *self, long offset, const unsigned char *data, long len_dat
     return 0;
 }
 
+/**
+ * @brief Get @c _bytes_written from @p self
+ * 
+ * @param self Bitmap object
+ * @return long containing @c _bytes_written
+ */
 long Bitmap_bytes_written(Bitmap *self) {
     return self->_bytes_written;
 }

@@ -161,6 +161,11 @@ Args *Args_init(int argc, char **argv) {
     return self;
 }
 
+/**
+ * @brief Frees the memory used in an @c Arguments structure
+ * 
+ * @param self @c Arguments structure to be freed
+ */
 void Args_free(Args *self) {
     free(self->output_file);
 
@@ -171,7 +176,14 @@ void Args_free(Args *self) {
     free(self);
 }
 
-// Calculate the width and height of the bitmap image based on the input parameters.
+/**
+ * @brief Writes the number of rows and cols to input variables 
+ * based on data present in nput @c Arguments structure
+ * 
+ * @param self @c Arguments structure (y_max, y_min, x_max, x_min, and step_size are used)
+ * @param num_rows Variable to have row count written to
+ * @param num_cols Variable to have column count written to
+ */
 #ifdef __CUDACC__
 __host__ __device__
 #endif
@@ -180,6 +192,15 @@ void Args_get_bitmap_dims(const Args *self, long *num_rows, long *num_cols) {
     *num_cols = round((self->x_max - self->x_min) / self->step_size);
 }
 
+/**
+ * @brief 
+ * 
+ * @param self @c Arguments structure
+ * @param row Bitmap point row value
+ * @param col Bitmap point column value
+ * @param c_real Variable to have converted row value written to
+ * @param c_imag Variable to have converted column value written to
+ */
 #ifdef __CUDACC__
 __host__ __device__
 #endif
@@ -222,6 +243,13 @@ long _parse_long(const char *str, bool *error) {
     return result;
 }
 
+/**
+ * @brief Check if input arguments are valid
+ * 
+ * @param self @c Arguments structure
+ * @return true
+ * @return false
+ */
 bool _args_valid(Args *self) {
     double x_range = self->x_max - self->x_min;
     double y_range = self->y_max - self->y_min;
@@ -273,6 +301,11 @@ bool _args_valid(Args *self) {
     return args_valid;
 }
 
+/**
+ * @brief Initialize @c Arguments structure with default values
+ * 
+ * @param self @c Arguments structure
+ */
 void _init_defaults(Args *self) {
     self->x_min = -2.1;
     self->x_max = 1;

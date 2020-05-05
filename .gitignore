@@ -8,4 +8,4 @@ Build/*
 # Ignore my sync script.
 sync*
 output/*
-
+*.png

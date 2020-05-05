@@ -31,6 +31,15 @@ static __inline__ tick getticks(void) {
     return (((unsigned long long)tbu0) << 32) | tbl;
 }
 
+/**
+ * @brief Provided code to get the current tick that the CPU is on.
+ * 
+ * @param args the command line arguements and/or default arguements
+ * @param time_secs time taken for this rank to complete execution
+ * @param bytes_written number of bytes written
+ * @param my_rank the current rank
+ * @param num_ranks the total amount of ranks
+ */
 void write_yaml(const Args *args, double time_secs, long bytes_written, int my_rank, int num_ranks) {
     const int MAX_FILE_NAME_LEN = 256;
 

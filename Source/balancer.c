@@ -35,6 +35,9 @@ long compute_mandelbrot_parallel(const Args *args) {
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
+    // Initialize the CUDA instance for this rank
+    cuda_init(my_rank);
+
     // Start inclusive, end exclusive.
     long bitmap_start_row, bitmap_end_row;
     // num_jobs, num_workers, worker_index, out start, out end.
@@ -86,6 +89,13 @@ long compute_mandelbrot_parallel(const Args *args) {
 #endif
 
 #ifndef PARALLEL
+/**
+ * @brief Starts the kernel with for each rank and assigns each rank a portion of the grid
+ * 
+ * @param args the command line arguements
+ *
+ * @return bytes_written the number of bytes written to the file
+ */
 long compute_mandelbrot_serial(const Args *args) {
     long num_rows, num_cols;
     Args_get_bitmap_dims(args, &num_rows, &num_cols);
@@ -116,7 +126,15 @@ long compute_mandelbrot_serial(const Args *args) {
     return bytes_written;
 }
 
-// Computes a subset of the rows and columns and writes them to the bitmap file.
+/**
+ * @brief Computes a subset of the rows and columns and writes them to the bitmap file.
+ *
+ * @param bitmap the image
+ * @param args the command line arguements
+ * @param start_row the offset starting row for this rank
+ * @param num_rows the number of rows to be computed
+ * @param num_cols the number of columns to be computed
+ */
 void _compute_and_write_rows_serial(Bitmap *bitmap, const Args *args, long start_row, long num_rows, long num_cols) {
     long bytes_needed = num_rows * num_cols * sizeof(Rgb);
     Rgb *grid = malloc(bytes_needed);
@@ -160,10 +178,15 @@ void _compute_and_write_rows_serial(Bitmap *bitmap, const Args *args, long start
 
 #endif
 
-
-
-// Determine which part of total this process should calculate.
-// start inclusive, end exclusive.
+/**
+ * @brief Determine which part of total this process should calculate. The start inclusive, end exclusive.
+ *
+ * @param num_jobs the image
+ * @param num_workers number of ranks
+ * @param worker_index the current rank
+ * @param start the starting row, inclusive
+ * @param end the ending row, exclusive
+ */
 void _get_slice(long num_jobs, long num_workers, long worker_index, long *start, long *end) {
     long quotient = num_jobs / num_workers;
     long remainder = num_jobs % num_workers;

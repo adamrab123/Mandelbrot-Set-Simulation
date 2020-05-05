@@ -15,7 +15,11 @@
 /**
  * @brief Iterates on grid to generate mandelbrot set points
  * 
- * @param grid the grid
+ * @param grid the grid of RBG values representing the image
+ * @param start_row the offset starting row for this rank
+ * @param num_rows the number of rows in the grid
+ * @param num_cols the number of columns in the grid
+ * @param args the command line arguements
  */
 __global__ void _mandelbrot_kernel(Rgb *grid, long start_row, long num_rows, long num_cols, const Args *args) {
     // Strided CUDA for loop over this process's grid, which is a portion of the entire image.
@@ -49,10 +53,13 @@ __global__ void _mandelbrot_kernel(Rgb *grid, long start_row, long num_rows, lon
 }
 
 /**
- * @brief starts the mandelbrot kernel with @p blocksize threads with each point undergoing @p num_iterations
+ * @brief starts the mandelbrot kernel with the given parameters and a given block size
  * 
- * @param num_iterations number of iterations per point
- * @param block_size number of threads per block
+ * @param grid the grid of RBG values representing the image
+ * @param start_row the offset starting row for this rank
+ * @param num_rows the number of rows in the grid
+ * @param num_cols the number of columns in the grid
+ * @param args the command line arguements
  */
 extern "C" void launch_mandelbrot_kernel(Rgb *grid, long start_row, long num_rows, long num_cols, const Args *args){
     long grid_area = num_rows * num_cols;
@@ -64,6 +71,11 @@ extern "C" void launch_mandelbrot_kernel(Rgb *grid, long start_row, long num_row
     cudaDeviceSynchronize();
 }
 
+/**
+ * @brief Initializes the CUDA device for this rank
+ * 
+ * @param myrank the current rank
+ */
 extern "C" void cuda_init(int my_rank) {
 	int cudaDeviceCount;
 	cudaError_t cE;
@@ -79,6 +91,13 @@ extern "C" void cuda_init(int my_rank) {
     }
 }
 
+/**
+ * @brief Dynamically allocate memory of size @p size on the device
+ * 
+ * @param size the size of the memory to be allocated
+ *
+ * @return mem the void pointer to the allocated memory
+ */
 extern "C" void *cuda_malloc(size_t size) {
     void *mem = NULL;
     cudaError_t error = cudaMallocManaged(&mem, size);
@@ -91,6 +110,11 @@ extern "C" void *cuda_malloc(size_t size) {
     return mem;
 }
 
+/**
+ * @brief Frees the allocated memory on the device
+ * 
+ * @param mem the memory to be freed
+ */
 extern "C" void cuda_free(void *mem) {
     cudaError_t freeError = cudaFree(mem);
     if (freeError != cudaSuccess) {

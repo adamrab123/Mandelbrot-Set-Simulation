@@ -43,14 +43,15 @@ def plotGraph(data, title, filename, xytexts=None ):
         maxBandwidths.append(maxBandwidth)
 
     ys = np.array([i['bytes_written'] / i['time_secs'] for i in maxBandwidths])
-
+    times = [i['time_secs'] for i in maxBandwidths]
+    print(times)
     labels = ["{}\n{}".format(a, b) for a, b in zip(ranks, blockSizes)]
-
+    plt.figure(figsize= (8, 5))
     # plt.figure(figsize=(14,6))
     plt.title("{} Bandwidth".format(title))
     # print(ranks)
     ys = ys / (10**6)
-    print(ys)
+    # print(ys)
     plt.plot(range(len(ranks)), ys, 'o-')
     # plt.ylim((-0.05*10**7,1.5*10**7))
     plt.xticks(ticks = range(len(ranks)), labels = labels)

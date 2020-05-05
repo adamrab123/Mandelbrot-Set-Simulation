@@ -61,7 +61,8 @@ block_sizes=(16 32 64 128 256 512 1024)
 # Index i is the same for all parallel arrays above.
 for i in "${!num_ranks_total[@]}";
 do
-    chunks="${chunk_sizes[$i]}"
+    # chunks="${chunk_sizes[$i]}"
+    chunks=1
     num_ranks="${num_ranks_total[$i]}"
     block_size="${block_sizes[$i]}"
 

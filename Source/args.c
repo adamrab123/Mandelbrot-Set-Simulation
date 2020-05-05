@@ -318,7 +318,7 @@ void _init_defaults(Args *self) {
     self->chunks = 1;
     self->delete_output = false;
     #ifdef PARALLEL
-    self->block_size = 1;
+    self->block_size = 64;
     self->time_dir = NULL;
     #endif
 }

@@ -9,5 +9,7 @@ Build/*
 sync*
 output/*
 *.png
+
 Submitty/*
+!Submitty/Makefile
 
